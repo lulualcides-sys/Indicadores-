@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "folder": "08_indicadores_originais/03_autorizados_usuario",
+  "public_release_requested_by_user": true,
+  "authorization_claim": "Usuário informou autorização para armazenamento e disponibilização pública dos originais; fonte não verificada independentemente",
+  "collection_method": "copied_from_existing_user_library_not_fetched_from_telegram_today",
+  "files": [
+    {
+      "filename": "MarketStructure_Dynamics_OrderBlocks_original.txt",
+      "path": "08_indicadores_originais/03_autorizados_usuario/MarketStructure_Dynamics_OrderBlocks_original.txt",
+      "source": "Original enviado pelo usuario em conversa anterior, preservado na Biblioteca_Indicadores_Trading/01_originais",
+      "library_file_id": "file_00000000cdf4820eac613a0f8d942186",
+      "characters": 18010,
+      "license_notice": "MPL-2.0 mencionado no arquivo",
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+    },
+    {
+      "filename": "Monster_Arrows_v2_SMC.pine",
+      "path": "08_indicadores_originais/03_autorizados_usuario/Monster_Arrows_v2_SMC.pine",
+      "source": "Original enviado pelo usuario em conversa anterior, preservado na Biblioteca_Indicadores_Trading/01_originais",
+      "library_file_id": "file_00000000e2a0820e97e065ff3e69b330",
+      "characters": 19002,
+      "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+    },
+    {
+      "filename": "AutoRangeDetector_TradingView_original.txt",
+      "path": "08_indicadores_originais/03_autorizados_usuario/AutoRangeDetector_TradingView_original.txt",
+      "source": "Original enviado pelo usuario em conversa anterior, preservado na Biblioteca_Indicadores_Trading/01_originais",
+      "library_file_id": "file_00000000da34820e8d786489faa162c2",
+      "characters": 38519,
+      "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+    },
+    {
+      "filename": "QKE_MR_Mt4_UltraFast_original.txt",
+      "path": "08_indicadores_originais/03_autorizados_usuario/QKE_MR_Mt4_UltraFast_original.txt",
+      "source": "Original enviado pelo usuario em conversa anterior, preservado na Biblioteca_Indicadores_Trading/01_originais",
+      "library_file_id": "file_00000000e814820ebb0405fe9f7e719a",
+      "characters": 2831,
+      "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+    },
+    {
+      "filename": "DTC_v1.36_TradingView_original.txt",
+      "path": "08_indicadores_originais/03_autorizados_usuario/DTC_v1.36_TradingView_original.txt",
+      "source": "Original enviado pelo usuario em conversa anterior, preservado na Biblioteca_Indicadores_Trading/01_originais",
+      "library_file_id": "file_0000000015dc820eb0bc08c2bf136841",
+      "characters": 16493,
+      "license_notice": "MPL-2.0 mencionado no arquivo",
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+    }
+  ]
+}

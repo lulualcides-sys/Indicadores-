@@ -1,0 +1,80 @@
+//@version=5
+indicator("MR Mt4  (Ultra Fast)", overlay=true)
+
+// Visual Indicators: 1 EMA + 1 SMA
+_ema50 = ta.ema(close, 50)
+_sma20 = ta.sma(close, 20)
+
+plot(_ema50, color=color.blue, title="EMA 50", linewidth=2)
+plot(_sma20, color=color.orange, title="SMA 20", linewidth=1)
+
+// Candle Coloring
+barcolor(close > open ? #168674 : #a52a34)
+
+// Strategy Parameters & Calculations
+_atr10 = ta.atr(10)
+_mom5 = (close / close[5]) * 100
+
+// Buy Conditions
+_cond_buy_1 = close > open
+_cond_buy_2 = _mom5 > 100
+_cond_buy_3 = (high - low) > _atr10
+_cond_buy_4 = (high > low) ? ((close - low) / (high - low) >= 0.7) : false
+_cS_raw = _cond_buy_1 and _cond_buy_2 and _cond_buy_3 and _cond_buy_4
+
+// Sell Conditions
+_cond_sell_1 = close < open
+_cond_sell_2 = _mom5 < 100
+_cond_sell_3 = (high - low) > _atr10
+_cond_sell_4 = (high > low) ? ((high - close) / (high - low) >= 0.7) : false
+_pS_raw = _cond_sell_1 and _cond_sell_2 and _cond_sell_3 and _cond_sell_4
+
+var int _cld = 0
+bool _cC = false
+bool _pC = false
+
+if _cld <= 0
+    if _cS_raw
+        _cC := true
+        _cld := 5 
+    else if _pS_raw
+        _pC := true
+        _cld := 5
+else
+    _cld := _cld - 1 
+
+bool _dW_C = _cC[1] and close > open
+bool _dW_P = _pC[1] and close < open
+bool _iDW = _dW_C or _dW_P
+
+bool _dL_C = _cC[1] and close <= open
+bool _dL_P = _pC[1] and close >= open
+
+bool _mW_C = _dL_C[1] and close > open
+bool _mW_P = _dL_P[1] and close < open
+bool _iMW = _mW_C or _mW_P
+
+bool _mL_C = _dL_C[1] and close <= open
+bool _mL_P = _dL_P[1] and close >= open
+bool _iLF = _mL_C or _mL_P
+
+bool _iW = _iDW or _iMW
+
+int _lb = 300
+bool _iWd = (last_bar_index - bar_index) <= _lb
+
+_aV = ta.atr(14)
+_bG = _aV * 0.65
+
+plotshape(_iWd and _cC ? low - _bG : na, title="B_B", style=shape.triangleup, location=location.absolute, color=color.new(#168674, 0), size=size.normal)
+plotshape(_iWd and _pC ? high + _bG : na, title="S_B", style=shape.triangledown, location=location.absolute, color=color.new(#a52a34, 0), size=size.normal)
+
+plotchar(_iWd and _iW, title="W_T", char='✔️', location=location.abovebar, color=color.green, size=size.small)
+plotchar(_iWd and _iLF, title="L_C", char='✖️', location=location.abovebar, color=color.red, size=size.small)
+
+var table _tB = table.new(position.top_right, 2, 6, border_width=2, border_color=color.new(color.gray, 50), bgcolor=color.new(#000000, 0))
+if barstate.islast
+    table.cell(_tB, 0, 4, " Telegram Channel :", text_color=color.white, text_halign=text.align_left, text_size=size.normal)
+    table.cell(_tB, 1, 4, "@MrMt4Signal ", text_color=color.white, text_halign=text.align_right, text_size=size.normal)
+    table.cell(_tB, 0, 5, "✈️ Telegram :", text_color=#38bdf8, text_halign=text.align_left, text_size=size.normal)
+    table.cell(_tB, 1, 5, "@mahabubmt4", text_color=#38bdf8, text_halign=text.align_right, text_size=size.normal)
