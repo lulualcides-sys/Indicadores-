@@ -1,4 +1,4 @@
-# Biblioteca real de originais (MIT) — 11/11/2026
+# Biblioteca real de originais — licenças MIT e MPL-2.0 — 11/11/2026
 
 **Agora são códigos originais, e não apenas links.** Arquivos preservados em caminhos reconhecíveis de suas fontes, com licença MIT intacta e commits fixos. Cada hash Git foi comparado **byte a byte** com o blob correspondente no repositório de origem.
 
@@ -20,10 +20,14 @@ Aqui significa **candidatos tecnicamente promissores com fonte legalmente acess�
 6. Integrar componentes **apenas se agregarem valor** ao Nexus Clean Signals v2, sem 20 filtros sequenciais. Usar um gráfico limpo com seta BUY/SELL após fechamento.
 7. Comparar sinais, frequência, custos e teste fora da amostra no MT5 antes de considerar aprovado.
 
-Os **8 indicadores MT5 próprios existentes** permanecem em `03_projetos_proprios` e não foram alterados nesta importação. A implementação final unificada é uma etapa posterior, não declarada como pronta.
+Os **10 indicadores MT5 próprios existentes** permanecem em `03_projetos_proprios` e não foram alterados nesta importação. A implementação final unificada é uma etapa posterior, não declarada como pronta.
 
 **Status**: integridade/origem verificadas; compilação Pine/MetaEditor, auditoria detalhada de cada script e lucros reais **não verificados**.
 
 ## Segunda leva de originais
 
 Foram adicionados **27 Pine Scripts integrais** de **5 autores** com licenças e hashes de arquivo conferidos. [Relatório de proveniência](SEGUNDA_LEVA_2026-11-11.md).
+
+## Lote 3 — fontes MQL5, orderflow e matemática
+
+Mais **21 códigos integrais** de três autores, com 30 arquivos exatos (licenças/documentação preservadas). São fontes de pesquisa, **não** provas de lucratividade ou ausência de repaint. [Relatório](LOTE3_PESQUISA_2026-11-11.md) · [Manifesto SHA](manifesto_lote3.json).

@@ -1,0 +1,308 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-11",
+  "files_verified_by": "matching Git blob SHA and byte sizes with upstream immutable commits",
+  "purpose": "Catalog original MT5 source, open-sourced former paid orderflow, and mathematical methods for later independent Nexus design",
+  "files": [
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/ATR_SLTP_Levels.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "ATR_SLTP_Levels.mq5",
+      "git_blob_sha": "dc83f3e5406dc04fd9206263dbad19f3ae01904b",
+      "size_bytes": 2586,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/LICENSE",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "LICENSE",
+      "git_blob_sha": "e6675cc40e3191f830e13217f1ffc2490a571cd3",
+      "size_bytes": 1069,
+      "license": "MIT",
+      "type": "license"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/MTF_RSI_Dashboard.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "MTF_RSI_Dashboard.mq5",
+      "git_blob_sha": "ce9e81b54cf08ba315adb854020ceba9bdafb3ca",
+      "size_bytes": 3778,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/README.md",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "README.md",
+      "git_blob_sha": "a2207d4fc6dcd7250c813885cef9a5a23699c973",
+      "size_bytes": 3431,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/SessionHighlighter.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "SessionHighlighter.mq5",
+      "git_blob_sha": "6c1a04ae97eb7f8ffe7cdb38163762a6ca0ea538",
+      "size_bytes": 3514,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/SmoothHeikinAshi_Alerts.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "SmoothHeikinAshi_Alerts.mq5",
+      "git_blob_sha": "e8699aba46ada7db91b1711c6924787ca5c91fac",
+      "size_bytes": 3913,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/SupplyDemandZones.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "SupplyDemandZones.mq5",
+      "git_blob_sha": "bde233c9ea84642e079ff2917433927645a6c6fa",
+      "size_bytes": 3343,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/09_miron_mql5/TradeInfoPanel.mq5",
+      "upstream_repo": "mironkonkov30-design/mql5-indicators",
+      "upstream_commit": "c9e7a385ffd6390fffcd0994007879a0382441dc",
+      "upstream_path": "TradeInfoPanel.mq5",
+      "git_blob_sha": "47e4c7331c2e04bbbfd488a78e01d5478d97dab3",
+      "size_bytes": 3306,
+      "license": "MIT",
+      "type": "mq5"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/CVD/CVD.pine",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "CVD/CVD.pine",
+      "git_blob_sha": "6c977220bb46c6f62b7170e0a6c6dad900be154f",
+      "size_bytes": 17160,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/CVD/README.md",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "CVD/README.md",
+      "git_blob_sha": "728207ce7a6bf43d7940019e1d80ca0ac48cabb3",
+      "size_bytes": 3753,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/DeltaPulse/DeltaPulse.pine",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "DeltaPulse/DeltaPulse.pine",
+      "git_blob_sha": "5ceaf8c5e61a5f5071373dd38b061d6079f02b52",
+      "size_bytes": 15865,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/DeltaPulse/README.md",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "DeltaPulse/README.md",
+      "git_blob_sha": "6033f8039e4c48f75ba5b89d780ebb59da520655",
+      "size_bytes": 3663,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/LICENSE",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "LICENSE",
+      "git_blob_sha": "1aacc29445eeaaacd50009598493fe5d24c4ffe2",
+      "size_bytes": 1068,
+      "license": "MIT",
+      "type": "license"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/LegDeltaProfile/LegDeltaProfile.pine",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "LegDeltaProfile/LegDeltaProfile.pine",
+      "git_blob_sha": "06aa01fef20b38623dee730e3d72fc55b19be333",
+      "size_bytes": 15893,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/LegDeltaProfile/README.md",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "LegDeltaProfile/README.md",
+      "git_blob_sha": "256eb5e4fbbdcdee38661d1e4b1b371f84537610",
+      "size_bytes": 4209,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/10_robwhitlow_orderflow/README.md",
+      "upstream_repo": "Robwhitlow3/tradingview-orderflow-indicators",
+      "upstream_commit": "8c71cb328e56adaaadeba0086f22df1a467d1dda",
+      "upstream_path": "README.md",
+      "git_blob_sha": "24b72fff60448a7aee1bcd347f9b58f5655baa7b",
+      "size_bytes": 5922,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/LICENSE",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "LICENSE",
+      "git_blob_sha": "8206fff6321dc55bb412cb672f83fd46b21cd09f",
+      "size_bytes": 1067,
+      "license": "MIT",
+      "type": "license"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/README.md",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "README.md",
+      "git_blob_sha": "e3839becd0946fac6972cbf5250a4b6aef916668",
+      "size_bytes": 3796,
+      "license": "MIT",
+      "type": "documentation"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/channels/vwapbands.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/channels/vwapbands.pine",
+      "git_blob_sha": "bed0b472601f9d8b9a2e07168e9e78019d0ff2cd",
+      "size_bytes": 4235,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/dynamics/chop.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/dynamics/chop.pine",
+      "git_blob_sha": "75ab3969c19dc325cdd3326bfa45257c60989a6a",
+      "size_bytes": 2322,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/dynamics/pfe.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/dynamics/pfe.pine",
+      "git_blob_sha": "56dfbefd6634608a6cb723f7e1540d49860b3236",
+      "size_bytes": 3782,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/filters/kalman.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/filters/kalman.pine",
+      "git_blob_sha": "f14405bfa58d4c4d6e56976c34b89a0bff68b0f3",
+      "size_bytes": 1283,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/filters/loess.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/filters/loess.pine",
+      "git_blob_sha": "c67ed1548c76372615fefc238ddabbb5eed239c2",
+      "size_bytes": 1858,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/filters/nw.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/filters/nw.pine",
+      "git_blob_sha": "17f42c9ae133f885d4714420c7deff70e85b21bc",
+      "size_bytes": 2889,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/filters/roofing.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/filters/roofing.pine",
+      "git_blob_sha": "cc17f730a3c1ed7ce64dc1676152dff3bef1e71c",
+      "size_bytes": 2713,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/filters/wavelet.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/filters/wavelet.pine",
+      "git_blob_sha": "ac72c6d78f28c19661973d5814652c511aec5b07",
+      "size_bytes": 4808,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/statistics/entropy.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/statistics/entropy.pine",
+      "git_blob_sha": "a073637e2dd5ae4c47df2c247c97fc97a6589ce4",
+      "size_bytes": 2515,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/statistics/hurst.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/statistics/hurst.pine",
+      "git_blob_sha": "db30d7c32f7661e76a2c0dec9bf3a36f1ca44504",
+      "size_bytes": 3178,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/statistics/wins.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/statistics/wins.pine",
+      "git_blob_sha": "af1c30ed2ac69fdad582b90f7283b2f54cb20af1",
+      "size_bytes": 2316,
+      "license": "MIT",
+      "type": "pine"
+    },
+    {
+      "path": "08_indicadores_originais/11_mihakralj_matematica/indicators/volatility/yzv.pine",
+      "upstream_repo": "mihakralj/pinescript",
+      "upstream_commit": "c4e91b962be09733d8fc76caa5191e9e586c5cee",
+      "upstream_path": "indicators/volatility/yzv.pine",
+      "git_blob_sha": "a836c6b55949758a64480d760f1d7054c5b2d460",
+      "size_bytes": 1948,
+      "license": "MIT",
+      "type": "pine"
+    }
+  ]
+}

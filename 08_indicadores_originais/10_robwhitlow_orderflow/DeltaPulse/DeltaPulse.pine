@@ -1,0 +1,341 @@
+//@version=6
+// =============================================================================
+//  Delta Pulse — 3-Layer Aggressive Flow Visualizer
+//
+//  Author:     Rob Whitlow
+//  License:    MIT
+//
+//  Three layers, all driven from per-bar delta (askVol - bidVol):
+//    1) Gradient Map  — bar coloring tinted by delta z-score
+//    2) Extreme Move  — dots during sustained extreme delta, bubble at climax
+//    3) Delta Print   — per-leg counter-flow absorption arrows on pivots
+//
+//  Delta computed via LTF tick proxy (default, ~70-85% fidelity) or coarser
+//  bar-close proxy (fallback for plans without LTF data access).
+//
+//  Free and open source under the MIT license.
+// =============================================================================
+indicator("Delta Pulse", shorttitle="DeltaPulse", overlay=true,
+     max_bars_back=1000, max_lines_count=500, max_labels_count=500)
+
+// -----------------------------------------------------------------------------
+// Input groups (mirror the MotiveWave tabs)
+// -----------------------------------------------------------------------------
+GRP_SRC   = "Delta Source"
+GRP_GM    = "Gradient Map"
+GRP_GMST  = "Gradient Map · Style"
+GRP_EM    = "Extreme Move"
+GRP_EMST  = "Extreme Move · Style"
+GRP_DP    = "Delta Print"
+GRP_DPST  = "Delta Print · Style"
+
+// -----------------------------------------------------------------------------
+// Delta Source
+// -----------------------------------------------------------------------------
+srcMode = input.string("LTF Tick Proxy (1s)", "Delta Source",
+     options=["LTF Tick Proxy (1s)", "Bar-Close Proxy"], group=GRP_SRC,
+     tooltip="LTF Tick Proxy aggregates 1-second sub-bars to classify volume as ask vs bid (most accurate). Bar-Close Proxy uses volume * sign(close-open) — coarser but works on all plans.")
+ltfRes  = input.string("1S", "LTF Resolution",
+     options=["1S","5S","10S","15S","30S","1"], group=GRP_SRC,
+     tooltip="Lower-timeframe resolution for the tick proxy. 1S is most accurate; raise to 5S/10S if you hit data limits on long history. Must be lower than your chart's timeframe.")
+
+// -----------------------------------------------------------------------------
+// Gradient Map
+// -----------------------------------------------------------------------------
+gmEnabled    = input.bool(true,  "Enable Gradient Map", group=GRP_GM)
+gmLookback   = input.int(200,    "Lookback Window (bars)", minval=20, maxval=1000, step=10, group=GRP_GM)
+gmEmaLen     = input.int(3,      "Smoothing EMA Length (1 = none)", minval=1, maxval=50, group=GRP_GM)
+gmZSaturate  = input.float(2.0,  "|z| at Saturation (color hits max)", minval=0.5, maxval=5.0, step=0.1, group=GRP_GM)
+
+gmBullColor  = input.color(color.new(#2882dc, 0),  "Bull Color (ask > bid)",  group=GRP_GMST)
+gmBearColor  = input.color(color.new(#dc3c3c, 0),  "Bear Color (bid > ask)",  group=GRP_GMST)
+gmNeutralCol = input.color(color.new(#787878, 0),  "Neutral Color (z near 0)", group=GRP_GMST)
+gmTranspMin  = input.int(10, "Transparency at z=0 (0=opaque, 100=invisible)",
+     minval=0, maxval=100, group=GRP_GMST,
+     tooltip="Pine transparency: 0 is fully opaque, 100 is invisible. This is the value used when |z| is near zero.")
+gmTranspMax  = input.int(0,  "Transparency at saturation",
+     minval=0, maxval=100, group=GRP_GMST)
+
+// -----------------------------------------------------------------------------
+// Extreme Move
+// -----------------------------------------------------------------------------
+emEnabled       = input.bool(true,   "Enable Extreme Move", group=GRP_EM)
+emTrendLookback = input.int(10,      "Trend Lookback (bars summed)", minval=2, maxval=100, group=GRP_EM)
+emBarZThresh    = input.float(2.0,   "Bar |z| Threshold",   minval=0.5, maxval=5.0, step=0.1, group=GRP_EM)
+emTrendZThresh  = input.float(1.5,   "Trend |z| Threshold", minval=0.5, maxval=5.0, step=0.1, group=GRP_EM)
+
+emTopColor      = input.color(color.new(#dc3c3c, 0),  "Top Marker Color (sell climax above)",     group=GRP_EMST)
+emBotColor      = input.color(color.new(#43a6c6, 0),  "Bottom Marker Color (buy climax below)",   group=GRP_EMST)
+emGapAtrMult    = input.float(0.25,  "Gap from Bar (× ATR14)", minval=0.0, maxval=3.0, step=0.05, group=GRP_EMST,
+     tooltip="Vertical gap between marker and bar high/low. Uses ATR so spacing looks right at any zoom.")
+
+// -----------------------------------------------------------------------------
+// Delta Print
+// -----------------------------------------------------------------------------
+dpEnabled        = input.bool(true,   "Enable Delta Print", group=GRP_DP)
+dpPivotStrength  = input.int(5,       "Swing Pivot Strength (bars each side)", minval=2, maxval=30, group=GRP_DP)
+dpBarZThresh     = input.float(1.5,   "Counter-Delta Bar |z| Threshold", minval=0.5, maxval=5.0, step=0.1, group=GRP_DP)
+
+dpUpColor        = input.color(color.new(#43a6c6, 0),  "Up Arrow Color (bullish absorption below)", group=GRP_DPST)
+dpDownColor      = input.color(color.new(#dc3c3c, 0),  "Down Arrow Color (bearish absorption above)", group=GRP_DPST)
+dpGapAtrMult     = input.float(0.20,  "Gap from Bar (× ATR14)", minval=0.0, maxval=3.0, step=0.05, group=GRP_DPST)
+
+// =============================================================================
+// 1) DELTA COMPUTATION
+// =============================================================================
+
+// Lower-timeframe ask/bid aggregation.
+// For each finished base bar, request.security_lower_tf returns an array of
+// 1-second (or chosen) sub-bars. We sum each sub-bar's volume into the ask
+// bucket if its close > open, the bid bucket if close < open, and split 50/50
+// on flat sub-bars (close == open) to keep the proxy unbiased.
+classifyAsk(array<float> closeArr, array<float> openArr, array<float> volArr) =>
+    askSum = 0.0
+    if not na(closeArr) and array.size(closeArr) > 0
+        for i = 0 to array.size(closeArr) - 1
+            c = array.get(closeArr, i)
+            o = array.get(openArr,  i)
+            v = array.get(volArr,   i)
+            if not na(c) and not na(o) and not na(v)
+                if c > o
+                    askSum += v
+                else if c == o
+                    askSum += v * 0.5
+    askSum
+
+classifyBid(array<float> closeArr, array<float> openArr, array<float> volArr) =>
+    bidSum = 0.0
+    if not na(closeArr) and array.size(closeArr) > 0
+        for i = 0 to array.size(closeArr) - 1
+            c = array.get(closeArr, i)
+            o = array.get(openArr,  i)
+            v = array.get(volArr,   i)
+            if not na(c) and not na(o) and not na(v)
+                if c < o
+                    bidSum += v
+                else if c == o
+                    bidSum += v * 0.5
+    bidSum
+
+// Pull LTF arrays. One element per sub-bar of the current chart bar.
+ltfClose = request.security_lower_tf(syminfo.tickerid, ltfRes, close)
+ltfOpen  = request.security_lower_tf(syminfo.tickerid, ltfRes, open)
+ltfVol   = request.security_lower_tf(syminfo.tickerid, ltfRes, volume)
+
+ltfAsk = classifyAsk(ltfClose, ltfOpen, ltfVol)
+ltfBid = classifyBid(ltfClose, ltfOpen, ltfVol)
+ltfDelta = ltfAsk - ltfBid
+
+// Bar-close fallback proxy.
+barCloseDelta = volume * (close > open ? 1.0 : close < open ? -1.0 : 0.0)
+
+// Final per-bar delta.
+delta = srcMode == "LTF Tick Proxy (1s)" ? ltfDelta : barCloseDelta
+
+// =============================================================================
+// 2) Z-SCORE PIPELINE
+// =============================================================================
+// Smoothed bar delta (EMA), then z-score over the lookback window.
+emaDelta = ta.ema(delta, gmEmaLen)
+barMean  = ta.sma(emaDelta, gmLookback)
+barStd   = ta.stdev(emaDelta, gmLookback)
+barZ     = barStd > 0 ? (emaDelta - barMean) / barStd : 0.0
+
+// Trend z-score: rolling N-bar SUM of raw bar delta, z-scored against lookback.
+trendSum  = math.sum(delta, emTrendLookback)
+trendMean = ta.sma(trendSum, gmLookback)
+trendStd  = ta.stdev(trendSum, gmLookback)
+trendZ    = trendStd > 0 ? (trendSum - trendMean) / trendStd : 0.0
+
+// =============================================================================
+// 3) GRADIENT MAP — bar coloring
+// =============================================================================
+// Map |z| in [0, gmZSaturate] to:
+//   - color blend [neutral, extreme]
+//   - transparency [gmTranspMin, gmTranspMax] (0=opaque, 100=invisible)
+gmColor() =>
+    z   = barZ
+    az  = math.min(math.abs(z), gmZSaturate)
+    t   = gmZSaturate > 0 ? az / gmZSaturate : 0.0
+    ext = z >= 0 ? gmBullColor : gmBearColor
+    blended = color.from_gradient(t, 0.0, 1.0, gmNeutralCol, ext)
+    transp  = math.round(gmTranspMin + (gmTranspMax - gmTranspMin) * t)
+    color.new(blended, transp)
+
+barColorVal = gmEnabled and not na(barZ) ? gmColor() : color(na)
+barcolor(barColorVal)
+
+// =============================================================================
+// 4) EXTREME MOVE — dots while active, bubble at climax
+// =============================================================================
+// Persistent state across bars (var).
+var bool   topActive = false
+var int    topExtBar = -1
+var float  topExtPx  = na
+var bool   botActive = false
+var int    botExtBar = -1
+var float  botExtPx  = na
+
+// Fire conditions on the current bar.
+topFire = emEnabled and not na(barZ) and not na(trendZ) and barZ >  emBarZThresh and trendZ >  emTrendZThresh
+botFire = emEnabled and not na(barZ) and not na(trendZ) and barZ < -emBarZThresh and trendZ < -emTrendZThresh
+
+// One-bar rollover events (recomputed each bar).
+topBubbleFire = false
+topBubbleBar  = -1
+topBubblePx   = float(na)
+botBubbleFire = false
+botBubbleBar  = -1
+botBubblePx   = float(na)
+
+// TOP side state machine
+if topFire
+    topActive := true
+    if na(topExtPx) or high > topExtPx
+        topExtPx  := high
+        topExtBar := bar_index
+else if topActive
+    topBubbleFire := true
+    topBubbleBar  := topExtBar
+    topBubblePx   := topExtPx
+    topActive := false
+    topExtPx  := na
+    topExtBar := -1
+
+// BOTTOM side state machine
+if botFire
+    botActive := true
+    if na(botExtPx) or low < botExtPx
+        botExtPx  := low
+        botExtBar := bar_index
+else if botActive
+    botBubbleFire := true
+    botBubbleBar  := botExtBar
+    botBubblePx   := botExtPx
+    botActive := false
+    botExtPx  := na
+    botExtBar := -1
+
+// ATR-based offsets so spacing looks consistent at any zoom.
+atr14 = ta.atr(14)
+emGap = atr14 * emGapAtrMult
+dpGap = atr14 * dpGapAtrMult
+
+// Active dots while sequence is firing.
+plotshape(topFire, title="EM Top Dot", style=shape.circle, location=location.abovebar,
+     color=emTopColor, size=size.tiny, offset=0)
+plotshape(botFire, title="EM Bot Dot", style=shape.circle, location=location.belowbar,
+     color=emBotColor, size=size.tiny, offset=0)
+
+// Climax bubbles — anchored on the extreme bar via xloc.bar_index.
+if topBubbleFire and topBubbleBar >= 0 and not na(topBubblePx)
+    label.new(x=topBubbleBar, y=topBubblePx + emGap, text="●",
+         xloc=xloc.bar_index, yloc=yloc.price,
+         style=label.style_circle, color=color.new(emTopColor, 70),
+         textcolor=emTopColor, size=size.normal)
+
+if botBubbleFire and botBubbleBar >= 0 and not na(botBubblePx)
+    label.new(x=botBubbleBar, y=botBubblePx - emGap, text="●",
+         xloc=xloc.bar_index, yloc=yloc.price,
+         style=label.style_circle, color=color.new(emBotColor, 70),
+         textcolor=emBotColor, size=size.normal)
+
+// =============================================================================
+// 5) DELTA PRINT — per-leg absorption arrows
+// =============================================================================
+// Strategy: continuously track the running "best counter-delta" candidate
+// across the bars between confirmed pivots. When a new opposite-type pivot
+// confirms, the candidate (if any) qualifies for an arrow if its |barZ|
+// exceeds threshold.
+//
+// This avoids dynamic history-reference in a loop, which v6 restricts.
+
+// Pivots — confirmed on the bar that is dpPivotStrength bars AFTER the
+// actual pivot bar. Returns the price of the pivot or na.
+ph = ta.pivothigh(high, dpPivotStrength, dpPivotStrength)
+pl = ta.pivotlow(low,   dpPivotStrength, dpPivotStrength)
+
+// Last pivot tracker.
+var int  lastPivType = 0      // +1 = high, -1 = low, 0 = unset
+var int  lastPivBar  = -1     // bar_index of the last pivot
+
+// Running candidate trackers (the bar within the active leg that has the
+// strongest counter-direction delta so far).
+var int   upLegBestBar  = -1   // most-negative delta in an up leg (low->high)
+var float upLegBestDel  = na
+var float upLegBestZ    = na
+var float upLegBestHigh = na   // remember high price at the candidate bar
+var int   dnLegBestBar  = -1   // most-positive delta in a down leg (high->low)
+var float dnLegBestDel  = na
+var float dnLegBestZ    = na
+var float dnLegBestLow  = na
+
+// Which leg type is currently active (between the last pivot and the next one)?
+//   activeLeg = +1 means lastPivot was a LOW, so we're in an up leg
+//   activeLeg = -1 means lastPivot was a HIGH, so we're in a down leg
+//   activeLeg =  0 means no leg yet (no pivot seen)
+activeLeg = lastPivType == -1 ? 1 : lastPivType == 1 ? -1 : 0
+
+// On every bar inside an active leg, update the running candidate.
+if dpEnabled and activeLeg == 1 and not na(delta)
+    if na(upLegBestDel) or delta < upLegBestDel
+        upLegBestDel  := delta
+        upLegBestBar  := bar_index
+        upLegBestZ    := barZ
+        upLegBestHigh := high
+
+if dpEnabled and activeLeg == -1 and not na(delta)
+    if na(dnLegBestDel) or delta > dnLegBestDel
+        dnLegBestDel  := delta
+        dnLegBestBar  := bar_index
+        dnLegBestZ    := barZ
+        dnLegBestLow  := low
+
+// When a new pivot confirms, close out the leg.
+hasPivotNow    = not na(ph) or not na(pl)
+currentPivType = not na(ph) ? 1 : not na(pl) ? -1 : 0
+currentPivBar  = hasPivotNow ? bar_index - dpPivotStrength : -1
+
+// Close UP leg on a HIGH pivot
+if dpEnabled and currentPivType == 1 and lastPivType == -1 and upLegBestBar >= 0
+    if not na(upLegBestZ) and math.abs(upLegBestZ) >= dpBarZThresh
+        // Selling absorbed into the rally -> DOWN arrow above the high
+        label.new(x=upLegBestBar, y=upLegBestHigh + dpGap, text="▼",
+             xloc=xloc.bar_index, yloc=yloc.price,
+             style=label.style_none, textcolor=dpDownColor,
+             size=size.small)
+    // Reset up-leg candidate
+    upLegBestBar  := -1
+    upLegBestDel  := na
+    upLegBestZ    := na
+    upLegBestHigh := na
+
+// Close DOWN leg on a LOW pivot
+if dpEnabled and currentPivType == -1 and lastPivType == 1 and dnLegBestBar >= 0
+    if not na(dnLegBestZ) and math.abs(dnLegBestZ) >= dpBarZThresh
+        // Buying absorbed into the selloff -> UP arrow below the low
+        label.new(x=dnLegBestBar, y=dnLegBestLow - dpGap, text="▲",
+             xloc=xloc.bar_index, yloc=yloc.price,
+             style=label.style_none, textcolor=dpUpColor,
+             size=size.small)
+    // Reset down-leg candidate
+    dnLegBestBar := -1
+    dnLegBestDel := na
+    dnLegBestZ   := na
+    dnLegBestLow := na
+
+// Advance the last-pivot tracker AFTER processing.
+if currentPivType != 0
+    lastPivType := currentPivType
+    lastPivBar  := currentPivBar
+
+// =============================================================================
+// 6) DEBUG / DATA WINDOW
+// =============================================================================
+// Expose key calculated values to the Data Window for tuning / verification.
+plot(delta,     "Bar Delta",  display=display.data_window)
+plot(barZ,      "Bar Z",      display=display.data_window)
+plot(trendSum,  "Trend Sum",  display=display.data_window)
+plot(trendZ,    "Trend Z",    display=display.data_window)
+plot(ltfAsk,    "LTF Ask",    display=display.data_window)
+plot(ltfBid,    "LTF Bid",    display=display.data_window)
