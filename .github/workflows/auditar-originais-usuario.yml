@@ -1,0 +1,17 @@
+name: Integridade das fontes do usuario
+on:
+  push:
+    paths:
+      - '08_indicadores_originais/03_autorizados_usuario/**'
+      - '.github/workflows/auditar-originais-usuario.yml'
+  pull_request:
+    paths:
+      - '08_indicadores_originais/03_autorizados_usuario/**'
+      - '.github/workflows/auditar-originais-usuario.yml'
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Testes de integridade e origem do lote
+        run: python -m unittest discover -s 08_indicadores_originais/03_autorizados_usuario/testes -p 'test_*.py' -v

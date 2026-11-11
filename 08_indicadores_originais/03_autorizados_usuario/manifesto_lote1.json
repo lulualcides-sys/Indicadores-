@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "date": "2026-11-11",
   "folder": "08_indicadores_originais/03_autorizados_usuario",
   "public_release_requested_by_user": true,
@@ -13,7 +13,10 @@
       "library_file_id": "file_00000000cdf4820eac613a0f8d942186",
       "characters": 18010,
       "license_notice": "MPL-2.0 mencionado no arquivo",
-      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED",
+      "git_blob_sha_archived": "d1c1eb911bf93a6bbe27baa54b5d88adf83224ff",
+      "git_archived_bytes": 18012,
+      "source_library_reported_bytes": 18367
     },
     {
       "filename": "Monster_Arrows_v2_SMC.pine",
@@ -22,7 +25,10 @@
       "library_file_id": "file_00000000e2a0820e97e065ff3e69b330",
       "characters": 19002,
       "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
-      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED",
+      "git_blob_sha_archived": "bce4af803209a4cf2289e8c3c9c2362569c72554",
+      "git_archived_bytes": 19006,
+      "source_library_reported_bytes": 19429
     },
     {
       "filename": "AutoRangeDetector_TradingView_original.txt",
@@ -31,7 +37,10 @@
       "library_file_id": "file_00000000da34820e8d786489faa162c2",
       "characters": 38519,
       "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
-      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED",
+      "git_blob_sha_archived": "9a56a4d92579a1aae1a6d32cf299c12264230340",
+      "git_archived_bytes": 39355,
+      "source_library_reported_bytes": 39813
     },
     {
       "filename": "QKE_MR_Mt4_UltraFast_original.txt",
@@ -40,7 +49,10 @@
       "library_file_id": "file_00000000e814820ebb0405fe9f7e719a",
       "characters": 2831,
       "license_notice": "Nenhuma licença explícita detectada automaticamente; usuário declara autorização de armazenamento/publicação",
-      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED",
+      "git_blob_sha_archived": "577aabcf9f11fec55e93c9db016c922e6a97f7ed",
+      "git_archived_bytes": 2843,
+      "source_library_reported_bytes": 2843
     },
     {
       "filename": "DTC_v1.36_TradingView_original.txt",
@@ -49,7 +61,11 @@
       "library_file_id": "file_0000000015dc820eb0bc08c2bf136841",
       "characters": 16493,
       "license_notice": "MPL-2.0 mencionado no arquivo",
-      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED"
+      "status": "SOURCE_INCLUDED_NOT_TRADING_VALIDATED",
+      "git_blob_sha_archived": "906646f63ab8227366cd3e37a726bf77f2a89331",
+      "git_archived_bytes": 16553,
+      "source_library_reported_bytes": 16912
     }
-  ]
+  ],
+  "git_blob_hashes_record": "Hashes da copia textual arquivada no GitHub. Dados originais na Biblioteca podem ter tamanhos diferentes apos normalizacao da leitura; nao comprovam copia byte a byte."
 }
