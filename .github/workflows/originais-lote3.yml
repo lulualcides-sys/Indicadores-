@@ -1,0 +1,35 @@
+name: Originais Lote 3 - source hashes and static causality scan
+on:
+  push:
+    paths:
+      - '08_indicadores_originais/09_miron_mql5/**'
+      - '08_indicadores_originais/10_robwhitlow_orderflow/**'
+      - '08_indicadores_originais/11_mihakralj_matematica/**'
+      - '08_indicadores_originais/manifesto_lote3.json'
+      - '08_indicadores_originais/testes/test_lote3_integridade.py'
+      - '01_catalogos/LOTE3_21_FONTES_2026-11-11.csv'
+      - 'scripts/triagem_estatica_lote3.py'
+      - '.github/workflows/originais-lote3.yml'
+  pull_request:
+    paths:
+      - '08_indicadores_originais/**'
+      - '01_catalogos/LOTE3_21_FONTES_2026-11-11.csv'
+      - 'scripts/triagem_estatica_lote3.py'
+      - '.github/workflows/originais-lote3.yml'
+jobs:
+  verify-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify all 30 original source hashes and license
+        run: python -m unittest discover -s 08_indicadores_originais/testes -p 'test_lote3_*.py' -v
+      - name: Static flags only (NOT certification of no repaint)
+        run: python scripts/triagem_estatica_lote3.py > triagem_estatica_lote3.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: auditoria-estatica-originais-lote3
+          path: triagem_estatica_lote3.json
+          if-no-files-found: error
