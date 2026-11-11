@@ -50,6 +50,19 @@ Repositório para **organizar, auditar e desenvolver indicadores de trading** a 
 - **Pesquisa de 15 abordagens:** [MQL5 CodeBase, GitHub, TradingView e Market](02_referencias_publicas/PESQUISA_TRANSVERSAL_INDICADORES_2026-11-11.md).
 - **Integração:** não substitui H1 Vector Factor, Liquidity Sweep, FVG, VWAP ou Structure Break; versões anteriores permanecem disponíveis.
 
+## Novos indicadores — compressão e tendência (11/11/2026)
+
+O acervo próprio passa de **6 para 8 indicadores**. Dois novos componentes **independentes e sem repintura intencional**:
+
+| Novo indicador | Gatilho | Código |
+|---|---|---|
+| **Nexus Volatility Squeeze Break NR v1.00** | Liberação de compressão BB/Keltner e rompimento confirmado | [Fonte e testes](03_projetos_proprios/Nexus_Volatility_Squeeze/README.md) |
+| **Nexus EMA Trend Pullback NR v1.00** | Reteste e continuação após EMA20/EMA50 | [Fonte e testes](03_projetos_proprios/Nexus_EMA_Trend_Pullback/README.md) |
+
+[Pesquisa técnica MQL5](02_referencias_publicas/PESQUISA_SQUEEZE_PULLBACK_2026-11-11.md) · [Kit MT5 v2 para testar oito indicadores](tools/mt5_manual_backtest_v2/LEIA_PRIMEIRO.md).
+
+**Atenção:** aprovação dos testes estáticos/temporais não é compilação no MetaEditor nem comprovação de lucro. Os seis indicadores e o kit de teste anteriores foram preservados.
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 

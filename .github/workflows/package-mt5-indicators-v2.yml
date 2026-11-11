@@ -1,0 +1,46 @@
+name: Pacote MT5 v2 com oito indicadores e EA testador
+on:
+  push:
+    paths:
+      - 'tools/mt5_manual_backtest_v2/**'
+      - '.github/workflows/package-mt5-indicators-v2.yml'
+  workflow_dispatch:
+jobs:
+  zip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Empacotar oito codigos e EA para MetaTrader
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          sources={
+          "H1_Vector_Factor_M1.mq5":"03_projetos_proprios/H1_Vector_Factor/v1.30/H1_Vector_Factor_M1.mq5",
+          "Nexus_Liquidity_Sweep_NR.mq5":"03_projetos_proprios/Nexus_Liquidity_Sweep/v1.00/Nexus_Liquidity_Sweep_NR.mq5",
+          "Nexus_FVG_Retest_NR.mq5":"03_projetos_proprios/Nexus_FVG_Retest/v1.00/Nexus_FVG_Retest_NR.mq5",
+          "Nexus_Session_VWAP_NR.mq5":"03_projetos_proprios/Nexus_Session_VWAP/v1.00/Nexus_Session_VWAP_NR.mq5",
+          "Nexus_Structure_Break_NR.mq5":"03_projetos_proprios/Nexus_Structure_Break/v1.00/Nexus_Structure_Break_NR.mq5",
+          "Nexus_Clean_Signals_NR.mq5":"03_projetos_proprios/Nexus_Clean_Signals/v1.00/Nexus_Clean_Signals_NR.mq5",
+          "Nexus_Volatility_Squeeze_NR.mq5":"03_projetos_proprios/Nexus_Volatility_Squeeze/v1.00/Nexus_Volatility_Squeeze_NR.mq5",
+          "Nexus_EMA_Trend_Pullback_NR.mq5":"03_projetos_proprios/Nexus_EMA_Trend_Pullback/v1.00/Nexus_EMA_Trend_Pullback_NR.mq5"}
+          out=Path("Nexus_Indicadores_MT5_8_Indicadores.zip")
+          tool=Path("tools/mt5_manual_backtest_v2")
+          with ZipFile(out,"w",ZIP_DEFLATED) as z:
+              for name,path in sources.items():
+                  p=Path(path)
+                  assert p.exists(),p
+                  assert "#property indicator_buffers" in p.read_text(encoding="utf8")
+                  z.write(p,"MQL5/Indicators/NexusBacktest/"+name)
+              code=tool/"Nexus_Indicator_Tester_EA.mq5"
+              assert "MQLInfoInteger(MQL_TESTER)" in code.read_text()
+              z.write(code,"MQL5/Experts/"+code.name)
+              z.write(tool/"LEIA_PRIMEIRO.md","LEIA_PRIMEIRO.md")
+          assert len(ZipFile(out).namelist())==10
+          print("8 indicadores, 1 EA, 1 guia, ZIP gerado")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nexus_MT5_Oito_Indicadores
+          path: Nexus_Indicadores_MT5_8_Indicadores.zip
+          if-no-files-found: error
