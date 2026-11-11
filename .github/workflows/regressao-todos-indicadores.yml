@@ -1,0 +1,36 @@
+name: Regressao total dos indicadores
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/**'
+      - '.github/workflows/regressao-todos-indicadores.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/**'
+      - '.github/workflows/regressao-todos-indicadores.yml'
+jobs:
+  smoke-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verificar suites de cada indicador sem dependencias externas
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=0
+          for suite in 03_projetos_proprios/*/tests 03_projetos_proprios/*/testes; do
+            if [ -d "$suite" ]; then
+              echo "::group::$suite"
+              python -m unittest discover -s "$suite" -p 'test_*.py' -v
+              echo "::endgroup::"
+              count=$((count+1))
+            fi
+          done
+          if [ "$count" -lt 1 ]; then
+            echo "Nenhuma suite encontrada"
+            exit 1
+          fi
+          echo "Suites verificadas: $count"

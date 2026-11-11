@@ -1,0 +1,19 @@
+name: Nexus Clean Signals — verificacao causal
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/Nexus_Clean_Signals/**'
+      - '.github/workflows/nexus-clean-signals.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/Nexus_Clean_Signals/**'
+      - '.github/workflows/nexus-clean-signals.yml'
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s 03_projetos_proprios/Nexus_Clean_Signals/tests -p 'test_*.py' -v

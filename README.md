@@ -40,6 +40,16 @@ Repositório para **organizar, auditar e desenvolver indicadores de trading** a 
 
 **Regra de aprovação:** código e testes unitários não significam compilação no MT5, lucro ou ausência de repaint em corretora real. Os indicadores anteriores permanecem inalterados.
 
+## Nexus Clean Signals NR — versão minimalista (pesquisa transversal)
+
+**[Novo indicador com código próprio e 3 variações](03_projetos_proprios/Nexus_Clean_Signals/README.md)** para MT5: **AUTO**, **BREAKOUT** e **SWEEP**. O padrão visual é **somente duas setas (BUY/SELL) e uma linha discreta no canto**. TP/SL só aparecem se o usuário ativar a visualização do último plano.
+
+- **Regime:** Kaufman Efficiency Ratio (ER) de candles anteriores; não é previsão ou probabilidade.
+- **Sinais:** exclusivamente após fechamento, sem mover as setas em atualizações normais.
+- **Validação:** casos sintéticos, testes de prefixo temporal e regressão estática automatizados; compilação MetaEditor e backtests reais **ainda pendentes**.
+- **Pesquisa de 15 abordagens:** [MQL5 CodeBase, GitHub, TradingView e Market](02_referencias_publicas/PESQUISA_TRANSVERSAL_INDICADORES_2026-11-11.md).
+- **Integração:** não substitui H1 Vector Factor, Liquidity Sweep, FVG, VWAP ou Structure Break; versões anteriores permanecem disponíveis.
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 
