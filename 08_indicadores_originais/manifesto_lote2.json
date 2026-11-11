@@ -1,0 +1,412 @@
+{
+  "version": 1,
+  "created_on": "2026-11-11",
+  "source_count": 5,
+  "script_count": 27,
+  "copied_files": 37,
+  "integrity": "Verified each copied blob SHA and size against pinned original Git tree",
+  "sources": [
+    {
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "folder": "04_feels",
+      "license": "MIT"
+    },
+    {
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "folder": "05_matswm86",
+      "license": "MIT"
+    },
+    {
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "folder": "06_taught_to_trade",
+      "license": "MPL-2.0"
+    },
+    {
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "folder": "07_timonkru",
+      "license": "MIT"
+    },
+    {
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "folder": "08_capital41",
+      "license": "MIT"
+    }
+  ],
+  "files": [
+    {
+      "local_path": "08_indicadores_originais/04_feels/LICENSE",
+      "original_path": "LICENSE",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "ddc9d6c3be2575e7fee8fc8f1031ae8236ce6ba5",
+      "size": 1089,
+      "kind": "license"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/README.md",
+      "original_path": "README.md",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "ef610ed7f5edfc1e28650ac0099a92db79cb26c1",
+      "size": 3916,
+      "kind": "readme"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/indicators/air-pocket-profile.pine",
+      "original_path": "indicators/air-pocket-profile.pine",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "2fc217a383f610e130912c4a312f93dca2e63991",
+      "size": 32895,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/indicators/confluence-pivot-zones.pine",
+      "original_path": "indicators/confluence-pivot-zones.pine",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "0199c0537a915ac609a655abf78357b72197835e",
+      "size": 13533,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/indicators/liquidity-magnet.pine",
+      "original_path": "indicators/liquidity-magnet.pine",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "70bc522554f0b569f207c67e610b2ec477474272",
+      "size": 23327,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/indicators/power-of-three.pine",
+      "original_path": "indicators/power-of-three.pine",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "66cc1a4bdf88ce86b4982d36b32675aec1fc28e2",
+      "size": 21485,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/04_feels/indicators/support-resistance-zones.pine",
+      "original_path": "indicators/support-resistance-zones.pine",
+      "repo": "VolodymyrFilias/feels-indicators",
+      "commit": "a7c92ab602ec1f9eb5b344a1629e2ad055a55f4b",
+      "license": "MIT",
+      "sha": "9ae0262043763a7e07a0d52f757d5e597f1e4942",
+      "size": 26222,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/LICENSE",
+      "original_path": "LICENSE",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "ea020955398c3afe92fb70c4cf277f14c61b8511",
+      "size": 1065,
+      "kind": "license"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/LiqSweep_iFVG.pine",
+      "original_path": "LiqSweep_iFVG.pine",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "bbd823fc9ce634354983ce79b7237dbe47371633",
+      "size": 35567,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/Po3_4H.pine",
+      "original_path": "Po3_4H.pine",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "8cf6062cf7b7b9cace9ec001035808e07badc3fc",
+      "size": 44476,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/README.md",
+      "original_path": "README.md",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "8342e894ca7ecf3a8ccf6b5da549c9a23f63f526",
+      "size": 13476,
+      "kind": "readme"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/Session_Pulse.pine",
+      "original_path": "Session_Pulse.pine",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "5ec320ff0ce4717d3a92c712e3895c3f1a699f9a",
+      "size": 23679,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/05_matswm86/Trend_Hub.pine",
+      "original_path": "Trend_Hub.pine",
+      "repo": "Matswm86/tradingview-indicators",
+      "commit": "8d20d4799f1facf5843fbee5ac756495a341ce1f",
+      "license": "MIT",
+      "sha": "5c60cb0b9b8c58a6fdd1af945d3c891bc4543d03",
+      "size": 8942,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/LICENSE",
+      "original_path": "LICENSE",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "d0a1fa1482eea82e19510e7920cbe3a03e41f691",
+      "size": 16726,
+      "kind": "license"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/README.md",
+      "original_path": "README.md",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "d7ef83425ff6239e7a2a9ff4091b1806fffccefa",
+      "size": 5594,
+      "kind": "readme"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/backtest-integrity-scanner.pine",
+      "original_path": "scripts/backtest-integrity-scanner.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "beddba57acc3e75b3ced466d2685596e718d52f3",
+      "size": 7198,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/cost-hurdle.pine",
+      "original_path": "scripts/cost-hurdle.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "a6e48748da0be048096f6725d2288d944531404c",
+      "size": 5240,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/range-filter-audit.pine",
+      "original_path": "scripts/range-filter-audit.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "5a5f6b44560690543f15bd4dd8a83b3bb4cc9006",
+      "size": 6973,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/regime-tercile-dashboard.pine",
+      "original_path": "scripts/regime-tercile-dashboard.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "d7e4b3fcf189c1fd188219e8ae8450c4893b730f",
+      "size": 5693,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/sample-size-panel.pine",
+      "original_path": "scripts/sample-size-panel.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "a45ef6ef43ea445cf33e73cb7838c1057276743d",
+      "size": 5482,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/session-range-value-area-map.pine",
+      "original_path": "scripts/session-range-value-area-map.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "b2d1e09dd20ffd6a48abacf10cc5d9be48c1cf2e",
+      "size": 10202,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/support-resistance-touch-count.pine",
+      "original_path": "scripts/support-resistance-touch-count.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "e4d1c8a038d269396d04bf080b0642cdb9273b66",
+      "size": 10203,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/06_taught_to_trade/scripts/wavetrend-audit.pine",
+      "original_path": "scripts/wavetrend-audit.pine",
+      "repo": "obekheet/pine-script-indicators",
+      "commit": "fb68ab4a81028e9bcbde74bf8b342c38ad32bf4d",
+      "license": "MPL-2.0",
+      "sha": "15af02c3ee1afc33fb344e76c825ec4983bf679c",
+      "size": 5078,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/LICENSE",
+      "original_path": "LICENSE",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "d60be60f05d6e6a2b07d979d4bf63397ad12132b",
+      "size": 1070,
+      "kind": "license"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/README.md",
+      "original_path": "README.md",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "ce97891296abab013c5f7eea5e8418f17fbc5b59",
+      "size": 3866,
+      "kind": "readme"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/future_volume_profile.pine",
+      "original_path": "future_volume_profile.pine",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "e2c50b895b1839e91cc5fb01b76351b7eb44c38a",
+      "size": 9116,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/futures_volume_delta.pine",
+      "original_path": "futures_volume_delta.pine",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "64433affdb0879c26a00c2a9e1d84528ff50ac84",
+      "size": 7109,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/liquidity_sweep_volume.pine",
+      "original_path": "liquidity_sweep_volume.pine",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "d4bb7e854e1b866e07bc73b7214ee2278803398e",
+      "size": 16394,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/volume_confirmed_orderblocks.pine",
+      "original_path": "volume_confirmed_orderblocks.pine",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "afa7e9daaee638643a75ffe6bcb7afe01f526b5a",
+      "size": 6457,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/07_timonkru/vwap_stdev_futurevol.pine",
+      "original_path": "vwap_stdev_futurevol.pine",
+      "repo": "Timonkru/pine-indicators",
+      "commit": "c0534c74114466332dfa9959b53db306145caee2",
+      "license": "MIT",
+      "sha": "53fdc3d592f545d646edc77ad2d00fde976f7e03",
+      "size": 5336,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/Capital41_ Opening Drive Playbook/Capital41_Opening_Drive_Playbook_v2.pine",
+      "original_path": "Capital41_ Opening Drive Playbook/Capital41_Opening_Drive_Playbook_v2.pine",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "e9d8d57535674bd863ebc8772f23fe7c0759e100",
+      "size": 12818,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/Capital41_LiquidityVoid Imbalance Map/Capital41_Liquidity_Void_Imbalance_Map.pine",
+      "original_path": "Capital41_LiquidityVoid Imbalance Map/Capital41_Liquidity_Void_Imbalance_Map.pine",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "f3f9f06ccc62b0d14d6e6b8a4f5272189bcd2031",
+      "size": 14725,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/Capital41_Order_Block/Capital41_Order_Block_v2.pine",
+      "original_path": "Capital41_Order_Block/Capital41_Order_Block_v2.pine",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "c207acc1e4435bb047a4c6a3e6fdca4b5bbf2b7d",
+      "size": 10267,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/Capital41_RegimeMatrix/Capital41_Regime_Matrix_v3.pine",
+      "original_path": "Capital41_RegimeMatrix/Capital41_Regime_Matrix_v3.pine",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "95526168d87224bbe801dacbbe0b6caee4cfa9ef",
+      "size": 8785,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/Capital41_Session_Flow/Capital41_Session_Flow_Simple_v2.pine",
+      "original_path": "Capital41_Session_Flow/Capital41_Session_Flow_Simple_v2.pine",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "05111a75c247a56876a4cea1710e920462c46738",
+      "size": 6056,
+      "kind": "pine"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/LICENSE",
+      "original_path": "LICENSE",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "ea986a89aa69ed756f351cb724bfc1f7a32c92b1",
+      "size": 1067,
+      "kind": "license"
+    },
+    {
+      "local_path": "08_indicadores_originais/08_capital41/README.md",
+      "original_path": "README.md",
+      "repo": "damianpitt/capital41-indicators",
+      "commit": "ce64522f7f747abb00b37503c00e2955a6d687d2",
+      "license": "MIT",
+      "sha": "b215087734d62fda18895e26f783d781a044c2a1",
+      "size": 6295,
+      "kind": "readme"
+    }
+  ]
+}

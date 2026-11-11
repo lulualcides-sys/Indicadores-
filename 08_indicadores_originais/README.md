@@ -23,3 +23,7 @@ Aqui significa **candidatos tecnicamente promissores com fonte legalmente acess�
 Os **8 indicadores MT5 próprios existentes** permanecem em `03_projetos_proprios` e não foram alterados nesta importação. A implementação final unificada é uma etapa posterior, não declarada como pronta.
 
 **Status**: integridade/origem verificadas; compilação Pine/MetaEditor, auditoria detalhada de cada script e lucros reais **não verificados**.
+
+## Segunda leva de originais
+
+Foram adicionados **27 Pine Scripts integrais** de **5 autores** com licenças e hashes de arquivo conferidos. [Relatório de proveniência](SEGUNDA_LEVA_2026-11-11.md).
