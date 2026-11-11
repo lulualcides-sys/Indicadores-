@@ -1,0 +1,752 @@
+{
+  "source": "https://raw.githubusercontent.com/getdata-finance/xauusd-1m-ohlcv-metals-historical-data/adcd99e7e0abee51e9a5eef123935e68a8d8aa30/XAUUSD_1m.csv",
+  "sha256": "a587597bbf88c2d868a00a4e0019cd705cee6ca4f20b0485d6b745f19fcc8225",
+  "raw_m1": 179662,
+  "first": "2026-03-26 02:28:00+00:00",
+  "last": "2026-09-25 20:44:00+00:00",
+  "cost_model": "0.40 USD/oz total spread plus 0.10 USD/oz slippage per side, NO commission",
+  "holding_bars": 12,
+  "rows": [
+    {
+      "indicator": "H1 Vector Factor",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 1355,
+      "overlap_skipped": 0,
+      "whole": {
+        "trades": 1355,
+        "wins_pct": 40.59,
+        "pf": 0.592,
+        "net_r": -210.79,
+        "avg_r": -0.1556,
+        "mdd_r": 210.79
+      },
+      "train": {
+        "trades": 976,
+        "wins_pct": 39.96,
+        "pf": 0.588,
+        "net_r": -153.14,
+        "avg_r": -0.1569,
+        "mdd_r": 156.01
+      },
+      "test": {
+        "trades": 379,
+        "wins_pct": 42.22,
+        "pf": 0.604,
+        "net_r": -57.64,
+        "avg_r": -0.1521,
+        "mdd_r": 57.9
+      }
+    },
+    {
+      "indicator": "Liquidity Sweep",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 5807,
+      "overlap_skipped": 21,
+      "whole": {
+        "trades": 5786,
+        "wins_pct": 48.2,
+        "pf": 0.47,
+        "net_r": -2052.79,
+        "avg_r": -0.3548,
+        "mdd_r": 2056.49
+      },
+      "train": {
+        "trades": 3982,
+        "wins_pct": 48.42,
+        "pf": 0.488,
+        "net_r": -1346.2,
+        "avg_r": -0.3381,
+        "mdd_r": 1347.85
+      },
+      "test": {
+        "trades": 1804,
+        "wins_pct": 47.73,
+        "pf": 0.432,
+        "net_r": -706.6,
+        "avg_r": -0.3917,
+        "mdd_r": 710.9
+      }
+    },
+    {
+      "indicator": "FVG Retest",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 6572,
+      "overlap_skipped": 259,
+      "whole": {
+        "trades": 6313,
+        "wins_pct": 45.57,
+        "pf": 0.36,
+        "net_r": -3083.55,
+        "avg_r": -0.4884,
+        "mdd_r": 3087.28
+      },
+      "train": {
+        "trades": 4296,
+        "wins_pct": 45.83,
+        "pf": 0.381,
+        "net_r": -1967.17,
+        "avg_r": -0.4579,
+        "mdd_r": 1970.89
+      },
+      "test": {
+        "trades": 2017,
+        "wins_pct": 45.02,
+        "pf": 0.32,
+        "net_r": -1116.39,
+        "avg_r": -0.5535,
+        "mdd_r": 1116.75
+      }
+    },
+    {
+      "indicator": "Session VWAP",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 3865,
+      "overlap_skipped": 1274,
+      "whole": {
+        "trades": 2591,
+        "wins_pct": 48.48,
+        "pf": 0.564,
+        "net_r": -681.05,
+        "avg_r": -0.2629,
+        "mdd_r": 683.38
+      },
+      "train": {
+        "trades": 1902,
+        "wins_pct": 47.63,
+        "pf": 0.549,
+        "net_r": -525.45,
+        "avg_r": -0.2763,
+        "mdd_r": 527.94
+      },
+      "test": {
+        "trades": 689,
+        "wins_pct": 50.8,
+        "pf": 0.607,
+        "net_r": -155.59,
+        "avg_r": -0.2258,
+        "mdd_r": 158.15
+      }
+    },
+    {
+      "indicator": "Structure Break",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 11985,
+      "overlap_skipped": 668,
+      "whole": {
+        "trades": 11317,
+        "wins_pct": 46.97,
+        "pf": 0.494,
+        "net_r": -3683.2,
+        "avg_r": -0.3255,
+        "mdd_r": 3685.68
+      },
+      "train": {
+        "trades": 7880,
+        "wins_pct": 46.6,
+        "pf": 0.496,
+        "net_r": -2563.78,
+        "avg_r": -0.3254,
+        "mdd_r": 2565.55
+      },
+      "test": {
+        "trades": 3437,
+        "wins_pct": 47.83,
+        "pf": 0.489,
+        "net_r": -1119.42,
+        "avg_r": -0.3257,
+        "mdd_r": 1120.13
+      }
+    },
+    {
+      "indicator": "Clean Signals AUTO",
+      "tf": "M1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 13109,
+      "overlap_skipped": 1443,
+      "whole": {
+        "trades": 11665,
+        "wins_pct": 46.35,
+        "pf": 0.465,
+        "net_r": -4186.91,
+        "avg_r": -0.3589,
+        "mdd_r": 4190.71
+      },
+      "train": {
+        "trades": 7867,
+        "wins_pct": 46.08,
+        "pf": 0.479,
+        "net_r": -2711.27,
+        "avg_r": -0.3446,
+        "mdd_r": 2714.72
+      },
+      "test": {
+        "trades": 3798,
+        "wins_pct": 46.92,
+        "pf": 0.438,
+        "net_r": -1475.64,
+        "avg_r": -0.3885,
+        "mdd_r": 1478.89
+      }
+    },
+    {
+      "indicator": "H1 Vector Factor",
+      "tf": "M5",
+      "status": "NOT SUPPORTED (M1-only)",
+      "signals": null,
+      "whole": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "test": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "train": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      }
+    },
+    {
+      "indicator": "Liquidity Sweep",
+      "tf": "M5",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 1300,
+      "overlap_skipped": 10,
+      "whole": {
+        "trades": 1289,
+        "wins_pct": 48.1,
+        "pf": 0.7,
+        "net_r": -221.66,
+        "avg_r": -0.172,
+        "mdd_r": 238.07
+      },
+      "train": {
+        "trades": 893,
+        "wins_pct": 46.92,
+        "pf": 0.675,
+        "net_r": -170.23,
+        "avg_r": -0.1906,
+        "mdd_r": 178.91
+      },
+      "test": {
+        "trades": 396,
+        "wins_pct": 50.76,
+        "pf": 0.761,
+        "net_r": -51.43,
+        "avg_r": -0.1299,
+        "mdd_r": 61.61
+      }
+    },
+    {
+      "indicator": "FVG Retest",
+      "tf": "M5",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 1267,
+      "overlap_skipped": 53,
+      "whole": {
+        "trades": 1213,
+        "wins_pct": 49.05,
+        "pf": 0.682,
+        "net_r": -225.48,
+        "avg_r": -0.1859,
+        "mdd_r": 229.89
+      },
+      "train": {
+        "trades": 826,
+        "wins_pct": 48.79,
+        "pf": 0.691,
+        "net_r": -148.82,
+        "avg_r": -0.1802,
+        "mdd_r": 153.23
+      },
+      "test": {
+        "trades": 387,
+        "wins_pct": 49.61,
+        "pf": 0.663,
+        "net_r": -76.66,
+        "avg_r": -0.1981,
+        "mdd_r": 78.01
+      }
+    },
+    {
+      "indicator": "Session VWAP",
+      "tf": "M5",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 1575,
+      "overlap_skipped": 524,
+      "whole": {
+        "trades": 1051,
+        "wins_pct": 50.14,
+        "pf": 0.802,
+        "net_r": -108.55,
+        "avg_r": -0.1033,
+        "mdd_r": 111.79
+      },
+      "train": {
+        "trades": 760,
+        "wins_pct": 48.68,
+        "pf": 0.764,
+        "net_r": -95.84,
+        "avg_r": -0.1261,
+        "mdd_r": 103.17
+      },
+      "test": {
+        "trades": 291,
+        "wins_pct": 53.95,
+        "pf": 0.911,
+        "net_r": -12.72,
+        "avg_r": -0.0437,
+        "mdd_r": 25.35
+      }
+    },
+    {
+      "indicator": "Structure Break",
+      "tf": "M5",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 2370,
+      "overlap_skipped": 109,
+      "whole": {
+        "trades": 2259,
+        "wins_pct": 47.32,
+        "pf": 0.706,
+        "net_r": -367.36,
+        "avg_r": -0.1626,
+        "mdd_r": 368.67
+      },
+      "train": {
+        "trades": 1579,
+        "wins_pct": 46.99,
+        "pf": 0.692,
+        "net_r": -270.28,
+        "avg_r": -0.1712,
+        "mdd_r": 271.91
+      },
+      "test": {
+        "trades": 680,
+        "wins_pct": 48.09,
+        "pf": 0.74,
+        "net_r": -97.08,
+        "avg_r": -0.1428,
+        "mdd_r": 102.34
+      }
+    },
+    {
+      "indicator": "Clean Signals AUTO",
+      "tf": "M5",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 2545,
+      "overlap_skipped": 287,
+      "whole": {
+        "trades": 2256,
+        "wins_pct": 46.63,
+        "pf": 0.689,
+        "net_r": -399.04,
+        "avg_r": -0.1769,
+        "mdd_r": 403.64
+      },
+      "train": {
+        "trades": 1541,
+        "wins_pct": 46.4,
+        "pf": 0.695,
+        "net_r": -266.85,
+        "avg_r": -0.1732,
+        "mdd_r": 272.18
+      },
+      "test": {
+        "trades": 715,
+        "wins_pct": 47.13,
+        "pf": 0.677,
+        "net_r": -132.19,
+        "avg_r": -0.1849,
+        "mdd_r": 135.9
+      }
+    },
+    {
+      "indicator": "H1 Vector Factor",
+      "tf": "M30",
+      "status": "NOT SUPPORTED (M1-only)",
+      "signals": null,
+      "whole": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "test": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "train": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      }
+    },
+    {
+      "indicator": "Liquidity Sweep",
+      "tf": "M30",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 191,
+      "overlap_skipped": 1,
+      "whole": {
+        "trades": 190,
+        "wins_pct": 45.79,
+        "pf": 0.773,
+        "net_r": -23.3,
+        "avg_r": -0.1226,
+        "mdd_r": 29.59
+      },
+      "train": {
+        "trades": 134,
+        "wins_pct": 45.52,
+        "pf": 0.765,
+        "net_r": -16.98,
+        "avg_r": -0.1267,
+        "mdd_r": 21.18
+      },
+      "test": {
+        "trades": 56,
+        "wins_pct": 46.43,
+        "pf": 0.793,
+        "net_r": -6.32,
+        "avg_r": -0.1128,
+        "mdd_r": 8.41
+      }
+    },
+    {
+      "indicator": "FVG Retest",
+      "tf": "M30",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 205,
+      "overlap_skipped": 7,
+      "whole": {
+        "trades": 198,
+        "wins_pct": 45.96,
+        "pf": 0.742,
+        "net_r": -29.08,
+        "avg_r": -0.1469,
+        "mdd_r": 30.92
+      },
+      "train": {
+        "trades": 127,
+        "wins_pct": 45.67,
+        "pf": 0.723,
+        "net_r": -20.17,
+        "avg_r": -0.1588,
+        "mdd_r": 22.08
+      },
+      "test": {
+        "trades": 71,
+        "wins_pct": 46.48,
+        "pf": 0.776,
+        "net_r": -8.91,
+        "avg_r": -0.1255,
+        "mdd_r": 12.02
+      }
+    },
+    {
+      "indicator": "Session VWAP",
+      "tf": "M30",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 501,
+      "overlap_skipped": 174,
+      "whole": {
+        "trades": 327,
+        "wins_pct": 49.24,
+        "pf": 0.913,
+        "net_r": -14.32,
+        "avg_r": -0.0438,
+        "mdd_r": 29.97
+      },
+      "train": {
+        "trades": 233,
+        "wins_pct": 47.64,
+        "pf": 0.847,
+        "net_r": -18.5,
+        "avg_r": -0.0794,
+        "mdd_r": 26.69
+      },
+      "test": {
+        "trades": 94,
+        "wins_pct": 53.19,
+        "pf": 1.097,
+        "net_r": 4.19,
+        "avg_r": 0.0445,
+        "mdd_r": 6.47
+      }
+    },
+    {
+      "indicator": "Structure Break",
+      "tf": "M30",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 371,
+      "overlap_skipped": 16,
+      "whole": {
+        "trades": 355,
+        "wins_pct": 48.45,
+        "pf": 0.852,
+        "net_r": -25.76,
+        "avg_r": -0.0726,
+        "mdd_r": 33.54
+      },
+      "train": {
+        "trades": 241,
+        "wins_pct": 49.79,
+        "pf": 0.876,
+        "net_r": -14.32,
+        "avg_r": -0.0594,
+        "mdd_r": 24.79
+      },
+      "test": {
+        "trades": 114,
+        "wins_pct": 45.61,
+        "pf": 0.803,
+        "net_r": -11.44,
+        "avg_r": -0.1003,
+        "mdd_r": 12.15
+      }
+    },
+    {
+      "indicator": "Clean Signals AUTO",
+      "tf": "M30",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 412,
+      "overlap_skipped": 43,
+      "whole": {
+        "trades": 369,
+        "wins_pct": 44.44,
+        "pf": 0.75,
+        "net_r": -49.94,
+        "avg_r": -0.1353,
+        "mdd_r": 50.82
+      },
+      "train": {
+        "trades": 261,
+        "wins_pct": 44.06,
+        "pf": 0.747,
+        "net_r": -35.48,
+        "avg_r": -0.136,
+        "mdd_r": 39.81
+      },
+      "test": {
+        "trades": 108,
+        "wins_pct": 45.37,
+        "pf": 0.757,
+        "net_r": -14.45,
+        "avg_r": -0.1338,
+        "mdd_r": 17.07
+      }
+    },
+    {
+      "indicator": "H1 Vector Factor",
+      "tf": "H1",
+      "status": "NOT SUPPORTED (M1-only)",
+      "signals": null,
+      "whole": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "test": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      },
+      "train": {
+        "trades": 0,
+        "wins_pct": null,
+        "pf": null,
+        "net_r": null,
+        "avg_r": null,
+        "mdd_r": null
+      }
+    },
+    {
+      "indicator": "Liquidity Sweep",
+      "tf": "H1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 99,
+      "overlap_skipped": 0,
+      "whole": {
+        "trades": 99,
+        "wins_pct": 41.41,
+        "pf": 0.682,
+        "net_r": -18.47,
+        "avg_r": -0.1866,
+        "mdd_r": 23.52
+      },
+      "train": {
+        "trades": 62,
+        "wins_pct": 41.94,
+        "pf": 0.676,
+        "net_r": -12.1,
+        "avg_r": -0.1951,
+        "mdd_r": 17.26
+      },
+      "test": {
+        "trades": 37,
+        "wins_pct": 40.54,
+        "pf": 0.694,
+        "net_r": -6.37,
+        "avg_r": -0.1723,
+        "mdd_r": 8.58
+      }
+    },
+    {
+      "indicator": "FVG Retest",
+      "tf": "H1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 88,
+      "overlap_skipped": 3,
+      "whole": {
+        "trades": 85,
+        "wins_pct": 55.29,
+        "pf": 1.172,
+        "net_r": 6.62,
+        "avg_r": 0.0778,
+        "mdd_r": 10.35
+      },
+      "train": {
+        "trades": 55,
+        "wins_pct": 56.36,
+        "pf": 1.205,
+        "net_r": 5.05,
+        "avg_r": 0.0918,
+        "mdd_r": 10.35
+      },
+      "test": {
+        "trades": 30,
+        "wins_pct": 53.33,
+        "pf": 1.114,
+        "net_r": 1.57,
+        "avg_r": 0.0522,
+        "mdd_r": 4.77
+      }
+    },
+    {
+      "indicator": "Session VWAP",
+      "tf": "H1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 301,
+      "overlap_skipped": 82,
+      "whole": {
+        "trades": 219,
+        "wins_pct": 47.03,
+        "pf": 0.845,
+        "net_r": -17.7,
+        "avg_r": -0.0808,
+        "mdd_r": 19.71
+      },
+      "train": {
+        "trades": 153,
+        "wins_pct": 48.37,
+        "pf": 0.883,
+        "net_r": -9.16,
+        "avg_r": -0.0599,
+        "mdd_r": 13.43
+      },
+      "test": {
+        "trades": 66,
+        "wins_pct": 43.94,
+        "pf": 0.762,
+        "net_r": -8.54,
+        "avg_r": -0.1295,
+        "mdd_r": 11.75
+      }
+    },
+    {
+      "indicator": "Structure Break",
+      "tf": "H1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 187,
+      "overlap_skipped": 12,
+      "whole": {
+        "trades": 175,
+        "wins_pct": 45.14,
+        "pf": 0.804,
+        "net_r": -17.23,
+        "avg_r": -0.0984,
+        "mdd_r": 18.2
+      },
+      "train": {
+        "trades": 116,
+        "wins_pct": 47.41,
+        "pf": 0.878,
+        "net_r": -6.85,
+        "avg_r": -0.059,
+        "mdd_r": 18.1
+      },
+      "test": {
+        "trades": 59,
+        "wins_pct": 40.68,
+        "pf": 0.676,
+        "net_r": -10.38,
+        "avg_r": -0.1759,
+        "mdd_r": 13.26
+      }
+    },
+    {
+      "indicator": "Clean Signals AUTO",
+      "tf": "H1",
+      "status": "Python proxy (not MT5 compiled)",
+      "signals": 203,
+      "overlap_skipped": 26,
+      "whole": {
+        "trades": 177,
+        "wins_pct": 48.59,
+        "pf": 0.969,
+        "net_r": -2.55,
+        "avg_r": -0.0144,
+        "mdd_r": 12.03
+      },
+      "train": {
+        "trades": 129,
+        "wins_pct": 49.61,
+        "pf": 1.002,
+        "net_r": 0.13,
+        "avg_r": 0.001,
+        "mdd_r": 12.03
+      },
+      "test": {
+        "trades": 48,
+        "wins_pct": 45.83,
+        "pf": 0.882,
+        "net_r": -2.68,
+        "avg_r": -0.0558,
+        "mdd_r": 7.89
+      }
+    }
+  ]
+}
