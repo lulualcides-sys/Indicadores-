@@ -1,0 +1,53 @@
+[
+  {
+    "id": "DRAWTOOL",
+    "arquivo": "Drawing Toolbox.ex4",
+    "bytes": 1949554,
+    "sha256": "6bfef06323bc035e930867a8987c2741ee2b497dd78fe91989ce2aee8226b4d6",
+    "execucao": "nao executado",
+    "avaliacao": "somente estatica"
+  },
+  {
+    "id": "TRENDWAVE",
+    "arquivo": "Trend Wave Indicator For MT4 (2).ex4",
+    "bytes": 17332,
+    "sha256": "3617d9dfea2f44fdf3d476dbe586a8cf5b1dcf234de99ac29b44d9005af28710",
+    "execucao": "nao executado",
+    "avaliacao": "somente estatica"
+  },
+  {
+    "id": "WYCKOFF",
+    "arquivo": "WyckoffFullSuite_v3.1.ex5",
+    "bytes": 124348,
+    "sha256": "29013d7021dd8538a8dc4d62bcf090ccf805fef73a4b9cac7de0c7ac6e32994c",
+    "execucao": "nao executado",
+    "avaliacao": "somente estatica"
+  },
+  {
+    "id": "QKE",
+    "arquivo": "QKE_MR_Mt4_UltraFast_original.txt",
+    "nome_recebido": "Quantum Kinetic Engine.txt",
+    "bytes": 2843,
+    "sha256": "f7d2297823a5bd1366f133cc9373e426df261320d435b9fc9beddaa301f07ea2",
+    "execucao": "não executado",
+    "avaliacao": "código lido estaticamente"
+  },
+  {
+    "id": "BCZONES",
+    "arquivo": "Support & Resistance BC Zones.ex5",
+    "nome_recebido": "Support & Resistance BC Zones.ex5",
+    "bytes": 50838,
+    "sha256": "78809a98cd88fee94e293663fcf9d81f09b5d948af04cc45dc3d7d316c76db8a",
+    "execucao": "não executado",
+    "avaliacao": "binário inspecionado estaticamente"
+  },
+  {
+    "id": "AUTORANGE",
+    "arquivo": "AutoRangeDetector_TradingView_original.txt",
+    "nome_recebido": "Indicator Auto Range Detector for TradingView.txt",
+    "bytes": 39813,
+    "sha256": "1495650828712a84ffcca1ba33c7d982101d5673ff451e71fb991ee71da4dea4",
+    "execucao": "código analisado; não executado na plataforma TradingView",
+    "avaliacao": "extração Python testada localmente; sem backtest financeiro"
+  }
+]
