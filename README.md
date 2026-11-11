@@ -29,6 +29,17 @@ Repositório para **organizar, auditar e desenvolver indicadores de trading** a 
 
 [Pesquisa de Telegram e fontes MQL5 adicionais](02_referencias_publicas/PESQUISA_INCREMENTAL_2026-11-11.md). **Testes Python/estáticos não substituem compilação no MetaEditor nem backtest com preço real.**
 
+## Novos projetos — expansão 11/11/2026 (segunda rodada)
+
+| Projeto | Código autoral | Testes |
+|---|---|---|
+| **Nexus Session VWAP Reclaim NR 1.00** | [VWAP de sessão com volume relativo e setas](03_projetos_proprios/Nexus_Session_VWAP/README.md) | [CI](.github/workflows/nexus-vwap-nr.yml) |
+| **Nexus Structure Break NR 1.00** | [Pivôs confirmados + BOS/CHoCH simplificado](03_projetos_proprios/Nexus_Structure_Break/README.md) | [CI](.github/workflows/nexus-structure-nr.yml) |
+
+[Pesquisa incremental com oito referências e canais do Telegram](02_referencias_publicas/PESQUISA_MODULOS_2026-11-11_B.md) · [catálogo CSV](01_catalogos/novos_indicadores_2026-11-11_B.csv).
+
+**Regra de aprovação:** código e testes unitários não significam compilação no MT5, lucro ou ausência de repaint em corretora real. Os indicadores anteriores permanecem inalterados.
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 
