@@ -1,0 +1,1 @@
+Backtest exploratório de seis indicadores MT5, usando modelos de referência Python sobre candles públicos XAUUSD M1, reagrupados em M5, M30 e H1. H1 Vector Factor é M1 apenas. Custos são hipóteses. O resultado não constitui teste compilado ou execução real no MetaTrader 5.

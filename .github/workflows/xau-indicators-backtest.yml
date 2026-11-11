@@ -1,0 +1,35 @@
+name: XAUUSD four-timeframe research backtest
+on:
+  push:
+    paths:
+      - 'research/backtests/xau_20261111/run.py'
+      - '.github/workflows/xau-indicators-backtest.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check pandas==2.3.3
+      - run: python research/backtests/xau_20261111/run.py
+      - name: Commit report on research branch
+        if: success() && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/backtests/xau_20261111/results/RELATORIO.md research/backtests/xau_20261111/results/resultados.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data: XAUUSD model backtest results"
+            git push origin HEAD:research/xauusd-multi-timeframe-backtest-20261111
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: xau-matrix
+          path: research/backtests/xau_20261111/results/
