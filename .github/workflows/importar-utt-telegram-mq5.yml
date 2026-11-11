@@ -1,0 +1,47 @@
+name: Telegram UTT importar fontes MQ5
+on:
+  push:
+    branches:
+      - feat/telegram-utt-sources-real-20261111
+    paths:
+      - 'scripts/importar_utt_telegram_mq5.py'
+      - '.github/workflows/importar-utt-telegram-mq5.yml'
+permissions:
+  contents: write
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Baixar fontes e rejeitar binarios e traversal
+        run: python scripts/importar_utt_telegram_mq5.py
+      - name: Conferir manifesto e hashes de todas as fontes
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib
+          root=pathlib.Path('.')
+          doc=json.loads((root/'08_indicadores_originais/12_utt_telegram_sources/manifesto_downloads.json').read_text())
+          assert doc['success'], 'No downloaded source'
+          for group in doc['success']:
+              assert any(x['path'].lower().endswith('.mq5') for x in group['files'])
+              for entry in group['files']:
+                  content=(root/entry['path']).read_bytes()
+                  assert len(content)==entry['bytes']
+                  assert hashlib.sha256(content).hexdigest()==entry['sha256']
+                  assert not entry['path'].lower().endswith(('.exe','.dll','.ex5'))
+          print('Verified',len(doc['success']),'original packages')
+          PY
+      - name: Commit somente na branch de pesquisa
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add 08_indicadores_originais/12_utt_telegram_sources
+          if ! git diff --cached --quiet; then
+            git commit -m "archive: verified downloadable MQ5 sources from Telegram-linked publisher"
+            git push origin HEAD:feat/telegram-utt-sources-real-20261111
+          fi
