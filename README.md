@@ -6,7 +6,7 @@ Repositório para **organizar, auditar e desenvolver indicadores de trading** a 
 
 ## Indicadores ORIGINAIS preservados no GitHub (MIT)
 
-Agora a biblioteca contém **arquivos reais de terceiros**, separados dos oito indicadores próprios: **10 Pine Scripts integrais** e **o pacote Python ta** (tendência, volume, momentum e volatilidade), com licenças e hashes SHA Git idênticos às origens. **Não são lucrativos ou livres de repintura por presunção**. [Abrir arquivos e critérios](08_indicadores_originais/README.md) · [Catálogo](01_catalogos/SELECAO_ORIGINAIS_2026-11-11.csv) · [Plano de extração para nosso indicador](05_extracoes_experimentais/PLANO_EXTRACAO_ORIGINAIS_2026-11-11.md).
+Agora a biblioteca contém **arquivos reais de terceiros**, separados dos oito indicadores próprios: **10 Pine Scripts integrais** e **o pacote Python ta** (tendência, volume, momentum e volatilidade), com licenças e hashes SHA Git idênticos às origens. **Não são lucrativos ou livres de repintura por presunção**. [Abrir arquivos e critérios](08_indicadores_originais/README.md) · [Auditoria causal dos 10 originais](04_auditorias/ORIGINAIS_PINE_TRIAGEM_REPAINT_20261111.md) · [Catálogo](01_catalogos/SELECAO_ORIGINAIS_2026-11-11.csv) · [Plano de extração para nosso indicador](05_extracoes_experimentais/PLANO_EXTRACAO_ORIGINAIS_2026-11-11.md).
 
 ## Acesso rápido
 
