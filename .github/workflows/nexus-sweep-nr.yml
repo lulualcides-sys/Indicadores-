@@ -1,0 +1,20 @@
+name: Nexus Sweep NR — verificacao causal
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/Nexus_Liquidity_Sweep/**'
+      - '.github/workflows/nexus-sweep-nr.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/Nexus_Liquidity_Sweep/**'
+      - '.github/workflows/nexus-sweep-nr.yml'
+jobs:
+  smoke-and-prefix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Executar testes focados sintéticos e guardas estáticas
+        run: python -m unittest discover -s 03_projetos_proprios/Nexus_Liquidity_Sweep/tests -p 'test_*.py' -v
