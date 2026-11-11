@@ -67,6 +67,14 @@ O acervo próprio passa de **6 para 8 indicadores**. Dois novos componentes **in
 
 **Atenção:** aprovação dos testes estáticos/temporais não é compilação no MetaEditor nem comprovação de lucro. Os seis indicadores e o kit de teste anteriores foram preservados.
 
+## Garimpo de indicadores do Telegram — pesquisa pública auditável
+
+**17 canais/grupos** e **28 candidatos/entradas** catalogados (uma repetição temática identificada). Inclui `@simpleforextools`, `@indicadoresgratis`, `@RocktradersPublic` e outros. Dois canais informados pelo usuário não tiveram conteúdo público acessível e foram marcados como não verificados.
+
+[Relatório com prioridade e riscos](09_pesquisa_telegram/RELATORIO_CURADORIA_2026-11-11.md) · [Canais](09_pesquisa_telegram/CANAIS_PUBLICOS_2026-11-11.csv) · [Candidatos](09_pesquisa_telegram/INDICADORES_CANDIDATOS_2026-11-11.csv) · [Hipóteses para o Nexus](09_pesquisa_telegram/HIPOTESES_EXTRACAO_2026-11-11.md).
+
+**Política:** não copiar arquivos comerciais/pagos sem licença; não instalar EX4/EX5 desconhecidos; não afirmar no-repaint ou lucro. Nesta etapa entraram **links e descrições com fontes**, e nenhum código de terceiros foi redistribuído.
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 
