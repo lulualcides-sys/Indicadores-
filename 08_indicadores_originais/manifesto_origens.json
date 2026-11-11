@@ -1,0 +1,211 @@
+{
+  "format_version": 1,
+  "generated_on": "2026-11-11",
+  "summary": "Licensed original sources; hashes verified byte-for-byte with pinned upstream commits. NOT a trading performance or repaint certification.",
+  "licenses": [
+    "08_indicadores_originais/01_pine_wavesunchained/LICENSE",
+    "08_indicadores_originais/02_python_ta/LICENSE"
+  ],
+  "files": [
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/LICENSE",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "LICENSE",
+      "git_blob_sha": "4693362ee10a94d2d8a9a02b55852d2c8f0d4e94",
+      "bytes": 1071
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/composite/signal_quality_engine/README.md",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/composite/signal_quality_engine/README.md",
+      "git_blob_sha": "2f5ee7c8b88ca2ed547803d8c44c78be3bf433ec",
+      "bytes": 4765
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/composite/signal_quality_engine/signal_quality_engine.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/composite/signal_quality_engine/signal_quality_engine.pine",
+      "git_blob_sha": "7262a12a0ef263be5c76db80e013886bc4502c2b",
+      "bytes": 26211
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/market_structure/market_structure_advanced/market_structure_advanced.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/market_structure/market_structure_advanced/market_structure_advanced.pine",
+      "git_blob_sha": "733bfb3b8b5ca4d611270114fed94d775e09b474",
+      "bytes": 15531
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/market_structure/structure_break_risk/structure_break_risk.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/market_structure/structure_break_risk/structure_break_risk.pine",
+      "git_blob_sha": "184ff4a3f082272178844190d27ae95c7fbac9e8",
+      "bytes": 27309
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/market_structure/swing_conviction_radar/swing_conviction_radar.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/market_structure/swing_conviction_radar/swing_conviction_radar.pine",
+      "git_blob_sha": "f8737ef3e396dfbd28bc5d60b2c2c07ecdf52b13",
+      "bytes": 12817
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/market_structure/trading_range_state_machine/README.md",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/market_structure/trading_range_state_machine/README.md",
+      "git_blob_sha": "e24ead4ab2b2d74b6abaf5cb3f8d04909fd41b57",
+      "bytes": 2999
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/market_structure/trading_range_state_machine/trading_range_state_machine.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/market_structure/trading_range_state_machine/trading_range_state_machine.pine",
+      "git_blob_sha": "4f73a3c20340c671e92d5320c35dd0a8c54cc404",
+      "bytes": 16278
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/mean_reversion/anchored_vwap/README.md",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/mean_reversion/anchored_vwap/README.md",
+      "git_blob_sha": "4921f4d8f24de87765685dea7bfaf1d08e28b639",
+      "bytes": 4351
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/mean_reversion/anchored_vwap/anchored_vwap.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/mean_reversion/anchored_vwap/anchored_vwap.pine",
+      "git_blob_sha": "cbdf8bebe673d20132ce2eda18de284bfed73a53",
+      "bytes": 14392
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/money_flow/candle_pressure_index/candle_pressure_index.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/money_flow/candle_pressure_index/candle_pressure_index.pine",
+      "git_blob_sha": "b70ff8b3d2567afb88e38ea5482960012c9c39c7",
+      "bytes": 7914
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/trend_direction/chandelier_flip_radar/chandelier_flip_radar.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/trend_direction/chandelier_flip_radar/chandelier_flip_radar.pine",
+      "git_blob_sha": "6ab3d14632e176d866d47f2e1d3b485003ae0e03",
+      "bytes": 25223
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/trend_strength/regime_classifier/README.md",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/trend_strength/regime_classifier/README.md",
+      "git_blob_sha": "f25f714230b08e1d3b46d8fca1fd88b673db94b9",
+      "bytes": 3527
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/trend_strength/regime_classifier/regime_classifier.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/trend_strength/regime_classifier/regime_classifier.pine",
+      "git_blob_sha": "7fa6fe76631305448fa3526bef7bcaa8d56a6441",
+      "bytes": 18896
+    },
+    {
+      "local_path": "08_indicadores_originais/01_pine_wavesunchained/indicators/volatility/compression_fractal_release/compression_fractal_release.pine",
+      "source_repo": "casoon/pine-scripts",
+      "source_commit": "880c228d63f37c3af0bc524346ff453c375d7bae",
+      "source_path": "indicators/volatility/compression_fractal_release/compression_fractal_release.pine",
+      "git_blob_sha": "f16ee4fcb2e99c4d602dff820e055e30607d3832",
+      "bytes": 24731
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/LICENSE",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "LICENSE",
+      "git_blob_sha": "96fbf93fe23a71129c9b78befb8364ce125b3093",
+      "bytes": 1096
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/README.md",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "README.md",
+      "git_blob_sha": "17641205c526d4753346df8e13e7377fd6cc4adf",
+      "bytes": 22336
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/__init__.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/__init__.py",
+      "git_blob_sha": "ac190cc12344cf9a964a0eba36fe2ad4c6e566eb",
+      "bytes": 534
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/momentum.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/momentum.py",
+      "git_blob_sha": "69a4cda7b478459f0eda8370ba398e04d73e1110",
+      "bytes": 45061
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/others.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/others.py",
+      "git_blob_sha": "c986b14538f7a06317a3542b0d1c95118e64ae23",
+      "bytes": 3502
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/trend.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/trend.py",
+      "git_blob_sha": "553afad82eb2f3456d6601f29b7033a7cad53e89",
+      "bytes": 60578
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/utils.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/utils.py",
+      "git_blob_sha": "9f93bab0c7a39abe12e7e3d2ea1d92de5d5849bf",
+      "bytes": 2522
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/volatility.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/volatility.py",
+      "git_blob_sha": "3bbf57e1e6cfde105f2c159e29c0e1819c149d9c",
+      "bytes": 33149
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/volume.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/volume.py",
+      "git_blob_sha": "eabf4d253ca49555fbeaa480fa9345474c9edb41",
+      "bytes": 24693
+    },
+    {
+      "local_path": "08_indicadores_originais/02_python_ta/ta/wrapper.py",
+      "source_repo": "bukosabino/ta",
+      "source_commit": "a890410710a6e483c9ba08da7f3dd5089e4b9dff",
+      "source_path": "ta/wrapper.py",
+      "git_blob_sha": "af24d6ef857aca47e0f629f036f1471c9c8c7c30",
+      "bytes": 18933
+    }
+  ]
+}
