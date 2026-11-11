@@ -104,7 +104,13 @@ int OnCalculate(const int total,const int prevCalculated,const datetime &time[],
       emaSlow=slowAlpha*close[i]+(1.0-slowAlpha)*emaSlow;
       processed++;
 
-      if(!rebuild && time[i]<=previousClosed) continue;
+      if(!rebuild && time[i]<=previousClosed)
+        {
+         // Reconstruct cooldown from confirmed arrows without rewriting them.
+         if(BuyBuffer[i]!=EMPTY_VALUE || SellBuffer[i]!=EMPTY_VALUE)
+            lastSignal=i;
+         continue;
+        }
       BuyBuffer[i]=EMPTY_VALUE;SellBuffer[i]=EMPTY_VALUE;
       if(processed<InpSlowEMA+8 || i>=oldest) continue;
 
