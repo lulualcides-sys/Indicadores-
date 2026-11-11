@@ -1,0 +1,23 @@
+name: Telegram segunda varredura - validar catalogo
+on:
+  push:
+    paths:
+      - '09_pesquisa_telegram/NOVOS_CANDIDATOS_2026-11-11.csv'
+      - '09_pesquisa_telegram/SEGUNDA_VARREDURA_2026-11-11.md'
+      - '09_pesquisa_telegram/tests/test_segunda_varredura.py'
+      - '.github/workflows/telegram-segunda-varredura.yml'
+  pull_request:
+    paths:
+      - '09_pesquisa_telegram/NOVOS_CANDIDATOS_2026-11-11.csv'
+      - '09_pesquisa_telegram/SEGUNDA_VARREDURA_2026-11-11.md'
+      - '09_pesquisa_telegram/tests/test_segunda_varredura.py'
+      - '.github/workflows/telegram-segunda-varredura.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s 09_pesquisa_telegram/tests -p 'test_segunda_varredura.py' -v
