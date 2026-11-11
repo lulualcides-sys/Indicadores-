@@ -16,6 +16,10 @@ Cinco arquivos Pine/TXT já fornecidos pelo usuário foram **copiados como texto
 
 Cinco autores com licença explícita (MIT ou MPL-2.0), total de 27 scripts e 37 arquivos originais conferidos por SHA Git. [Fontes e objetivos](08_indicadores_originais/SEGUNDA_LEVA_2026-11-11.md) · [catálogo](01_catalogos/SEGUNDA_LEVA_27_ORIGINAIS_2026-11-11.csv). Nenhum dos dez indicadores Nexus anteriores foi modificado.
 
+## Terceiro lote de originais — fontes MQL5, orderflow e matemática
+
+**21 códigos adicionais** arquivados com hash idêntico aos autores: seis indicadores **MT5/MQL5**, três fontes de **orderflow Pine** publicadas sob MIT pelo próprio autor e doze filtros/estatísticas matemáticos. [Lote 3 completo](08_indicadores_originais/LOTE3_PESQUISA_2026-11-11.md) · [Catálogo das 21 fontes](01_catalogos/LOTE3_21_FONTES_2026-11-11.csv) · [Triagem técnica](04_auditorias/LOTE3_TRIAGEM_2026-11-11.md).
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |
