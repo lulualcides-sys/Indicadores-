@@ -1,0 +1,424 @@
+//@version=5
+indicator("Monster Arrows v2.0 SMC - MQ4 Logic Conversion", overlay=true, max_labels_count=500, max_lines_count=500, max_boxes_count=200, dynamic_requests=true)
+
+//------------------------------------------------------------------------------
+// Inputs - MQ4 extern equivalents
+//------------------------------------------------------------------------------
+groupFilters = "Filters & Confirmation"
+EnableHTF_Filter = input.bool(true, "Enable Higher Timeframe Confluence Filter", group=groupFilters)
+RequireBothHTF = input.bool(true, "Require BOTH HTF confirmations", group=groupFilters)
+ConfirmationDelay = input.int(2, "Bars to wait to confirm signal", minval=1, maxval=50, group=groupFilters)
+
+groupSMC = "Smart Money Concepts"
+EnableHunt = input.bool(true, "Liquidity Sweep / Stop Hunt", group=groupSMC)
+EnableFVG = input.bool(true, "Fair Value Gap / Displacement", group=groupSMC)
+ShowSMCVisuals = input.bool(true, "Show SMC Lines & Boxes", group=groupSMC)
+FVG_Buy_Color = input.color(#0B5D1E, "FVG Box color for Buy", group=groupSMC)
+FVG_Sell_Color = input.color(#8B0000, "FVG Box color for Sell", group=groupSMC)
+Hunt_Buy_Color = input.color(#00FFFF, "Hunt line color for Buy", group=groupSMC)
+Hunt_Sell_Color = input.color(#FF00FF, "Hunt line color for Sell", group=groupSMC)
+
+groupZZ = "ZigZag Settings"
+ZigZagDepth = input.int(30, "ZigZag Depth", minval=2, group=groupZZ)
+ZigZagDeviation = input.int(5, "ZigZag Deviation", minval=0, group=groupZZ)
+ZigZagBackstep = input.int(3, "ZigZag Backstep", minval=1, group=groupZZ)
+FibLevel = input.float(0.618, "Fibonacci Retracement Level", minval=0.0, maxval=1.0, step=0.001, group=groupZZ)
+BarsToAnalyze = input.int(1000, "Bars To Analyze", minval=100, group=groupZZ)
+
+groupATR = "Daily ATR Targets"
+Show_ATR_Targets = input.bool(true, "Show Daily ATR Lines", group=groupATR)
+ATR_Period = input.int(14, "ATR Period Daily", minval=1, group=groupATR)
+ATR_High_Color = input.color(#00FFFF, "ATR High Color", group=groupATR)
+ATR_Low_Color = input.color(#FF00FF, "ATR Low Color", group=groupATR)
+
+groupTP = "Auto TP Settings"
+Auto_Draw_TP = input.bool(true, "Draw TP Lines for signal", group=groupTP)
+TP_Entry_Color = input.color(#FFFF00, "Entry line color", group=groupTP)
+TP1_Color = input.color(#00FF00, "TP1 line color", group=groupTP)
+TP2_Color = input.color(#FFA500, "TP2 line color", group=groupTP)
+TP3_Color = input.color(#FF0000, "TP3 line color", group=groupTP)
+
+groupDash = "Dashboard & Alerts"
+Show_Dashboard = input.bool(true, "Show Info Panel", group=groupDash)
+Enable_Alerts = input.bool(true, "Master Alert Switch", group=groupDash)
+
+groupVisual = "Arrow Visuals"
+Arrow_Size = input.int(4, "Arrow size", minval=1, maxval=5, group=groupVisual)
+Buy_Arrow_Color = input.color(#00FF00, "Buy Arrow Color", group=groupVisual)
+Sell_Arrow_Color = input.color(#FF0000, "Sell Arrow Color", group=groupVisual)
+Arrow_Distance = input.int(15, "Arrow distance from candle, ticks", minval=1, group=groupVisual)
+Show_Confirmation_Dots = input.bool(true, "Show confirmation indicator dots", group=groupVisual)
+
+//------------------------------------------------------------------------------
+// Helpers
+//------------------------------------------------------------------------------
+point = syminfo.mintick
+arrowDistance = Arrow_Distance * point
+deviation = ZigZagDeviation * point
+
+f_next_tf_1() =>
+    switch timeframe.period
+        "1" => "5"
+        "5" => "15"
+        "15" => "30"
+        "30" => "60"
+        "60" => "240"
+        "240" => "D"
+        "D" => "W"
+        "W" => "M"
+        => timeframe.period
+
+f_next_tf_2() =>
+    switch timeframe.period
+        "1" => "15"
+        "5" => "30"
+        "15" => "60"
+        "30" => "240"
+        "60" => "D"
+        "240" => "W"
+        "D" => "M"
+        "W" => "M"
+        => timeframe.period
+
+f_tf_name(tf) =>
+    switch tf
+        "1" => "M1"
+        "5" => "M5"
+        "15" => "M15"
+        "30" => "M30"
+        "60" => "H1"
+        "240" => "H4"
+        "D" => "D1"
+        "W" => "W1"
+        "M" => "MN1"
+        => tf
+
+f_dir_txt(d) =>
+    d == 1 ? "UP" : d == -1 ? "DN" : "-"
+
+f_dir_color(d) =>
+    d == 1 ? #00FF00 : d == -1 ? #FF0000 : #808080
+
+f_ma_dir(tf) =>
+    c = request.security(syminfo.tickerid, tf, close, barmerge.gaps_off, barmerge.lookahead_off)
+    m = request.security(syminfo.tickerid, tf, ta.sma(close, 200), barmerge.gaps_off, barmerge.lookahead_off)
+    c > m ? 1 : c < m ? -1 : 0
+
+// HTF side follows MQ4 logic: find latest ZigZag point on HTF; high pivot = -1, low pivot = 1.
+f_htf_zigzag_dir() =>
+    ph = ta.pivothigh(high, ZigZagDepth, ConfirmationDelay)
+    pl = ta.pivotlow(low, ZigZagDepth, ConfirmationDelay)
+    var int d = 0
+    d := not na(ph) ? -1 : not na(pl) ? 1 : nz(d[1], 0)
+    d
+
+f_scan_bull_fvg() =>
+    bool found = false
+    int offFound = na
+    float top = na
+    float bottom = na
+    scanMax = ZigZagDepth < 3 ? 3 : ZigZagDepth
+    for i = 2 to scanMax
+        off = ConfirmationDelay + i
+        if not found and not na(high[off + 2]) and not na(low[off])
+            if high[off + 2] < low[off]
+                found := true
+                offFound := off
+                top := low[off]
+                bottom := high[off + 2]
+    [found, offFound, top, bottom]
+
+f_scan_bear_fvg() =>
+    bool found = false
+    int offFound = na
+    float top = na
+    float bottom = na
+    scanMax = ZigZagDepth < 3 ? 3 : ZigZagDepth
+    for i = 2 to scanMax
+        off = ConfirmationDelay + i
+        if not found and not na(low[off + 2]) and not na(high[off])
+            if low[off + 2] > high[off]
+                found := true
+                offFound := off
+                top := low[off + 2]
+                bottom := high[off]
+    [found, offFound, top, bottom]
+
+//------------------------------------------------------------------------------
+// ATR targets
+//------------------------------------------------------------------------------
+dailyATR = request.security(syminfo.tickerid, "D", ta.atr(ATR_Period), barmerge.gaps_off, barmerge.lookahead_off)
+dailyOpen = request.security(syminfo.tickerid, "D", open, barmerge.gaps_off, barmerge.lookahead_off)
+
+plot(Show_ATR_Targets ? dailyOpen + dailyATR : na, "Daily ATR High Target", color=ATR_High_Color, linewidth=1, style=plot.style_linebr)
+plot(Show_ATR_Targets ? dailyOpen - dailyATR : na, "Daily ATR Low Target", color=ATR_Low_Color, linewidth=1, style=plot.style_linebr)
+
+//------------------------------------------------------------------------------
+// ZigZag approximation
+//------------------------------------------------------------------------------
+pivotHigh = ta.pivothigh(high, ZigZagDepth, ConfirmationDelay)
+pivotLow = ta.pivotlow(low, ZigZagDepth, ConfirmationDelay)
+
+isPivotHigh = not na(pivotHigh)
+isPivotLow = not na(pivotLow)
+
+pivotBar = bar_index - ConfirmationDelay
+pivotHighPrice = pivotHigh
+pivotLowPrice = pivotLow
+
+var float lastPivotPrice = na
+validHigh = isPivotHigh and (na(lastPivotPrice) or math.abs(pivotHighPrice - lastPivotPrice) >= deviation)
+validLow = isPivotLow and (na(lastPivotPrice) or math.abs(pivotLowPrice - lastPivotPrice) >= deviation)
+
+// Previous ZigZag points, equivalent to the older ZigZag points searched after current bar in MQ4.
+var float zz1 = na
+var float zz2 = na
+var int zz1Bar = na
+var int zz2Bar = na
+
+var float lastBuySweepLow = na
+var int lastBuySweepLowBar = na
+var float lastSellSweepHigh = na
+var int lastSellSweepHighBar = na
+
+var int lastBuySignalBar = na
+var int lastSellSignalBar = na
+
+sameBuyInLast200 = not na(lastBuySignalBar) and pivotBar - lastBuySignalBar <= 200
+sameSellInLast200 = not na(lastSellSignalBar) and pivotBar - lastSellSignalBar <= 200
+
+//------------------------------------------------------------------------------
+// HTF filter
+//------------------------------------------------------------------------------
+tf1 = f_next_tf_1()
+tf2 = f_next_tf_2()
+
+htf1 = request.security(syminfo.tickerid, tf1, f_htf_zigzag_dir(), barmerge.gaps_off, barmerge.lookahead_off)
+htf2 = request.security(syminfo.tickerid, tf2, f_htf_zigzag_dir(), barmerge.gaps_off, barmerge.lookahead_off)
+
+buyHTF = not EnableHTF_Filter ? true : RequireBothHTF ? (htf1 == 1 and htf2 == 1) : (htf1 == 1 or htf2 == 1)
+sellHTF = not EnableHTF_Filter ? true : RequireBothHTF ? (htf1 == -1 and htf2 == -1) : (htf1 == -1 or htf2 == -1)
+
+//------------------------------------------------------------------------------
+// SMC filters
+//------------------------------------------------------------------------------
+buyHunt = EnableHunt ? (validLow and not na(lastBuySweepLow) and pivotLowPrice < lastBuySweepLow) : true
+sellHunt = EnableHunt ? (validHigh and not na(lastSellSweepHigh) and pivotHighPrice > lastSellSweepHigh) : true
+
+[bullFVG, bullOff, bullTop, bullBottom] = f_scan_bull_fvg()
+[bearFVG, bearOff, bearTop, bearBottom] = f_scan_bear_fvg()
+
+buyFVG = EnableFVG ? bullFVG : true
+sellFVG = EnableFVG ? bearFVG : true
+
+//------------------------------------------------------------------------------
+// Fib filter, matching MQ4 branch logic
+//------------------------------------------------------------------------------
+buyFib = true
+if validLow and not na(zz1) and not na(zz2)
+    if zz1 > zz2
+        fibPrice = zz1 - ((zz1 - zz2) * FibLevel)
+        buyFib := pivotLowPrice <= fibPrice
+    else
+        buyFib := true
+
+sellFib = true
+if validHigh and not na(zz1) and not na(zz2)
+    if zz1 < zz2
+        fibPrice = zz1 + ((zz2 - zz1) * FibLevel)
+        sellFib := pivotHighPrice >= fibPrice
+    else
+        sellFib := true
+
+//------------------------------------------------------------------------------
+// Signal conditions
+//------------------------------------------------------------------------------
+buySignal = validLow and not sameBuyInLast200 and buyHTF and buyHunt and buyFVG and buyFib
+sellSignal = validHigh and not sameSellInLast200 and sellHTF and sellHunt and sellFVG and sellFib
+
+buyY = pivotLowPrice - arrowDistance
+sellY = pivotHighPrice + arrowDistance
+
+if buySignal
+    label.new(pivotBar, buyY, "BUY", xloc=xloc.bar_index, style=label.style_label_up, color=Buy_Arrow_Color, textcolor=#000000, size=size.normal)
+    if Show_Confirmation_Dots
+        label.new(pivotBar, buyY - arrowDistance * 0.5, "•", xloc=xloc.bar_index, style=label.style_none, textcolor=#FFFF00, size=size.large)
+    lastBuySignalBar := pivotBar
+
+if sellSignal
+    label.new(pivotBar, sellY, "SELL", xloc=xloc.bar_index, style=label.style_label_down, color=Sell_Arrow_Color, textcolor=#FFFFFF, size=size.normal)
+    if Show_Confirmation_Dots
+        label.new(pivotBar, sellY + arrowDistance * 0.5, "•", xloc=xloc.bar_index, style=label.style_none, textcolor=#FF00FF, size=size.large)
+    lastSellSignalBar := pivotBar
+
+//------------------------------------------------------------------------------
+// SMC visuals
+//------------------------------------------------------------------------------
+if ShowSMCVisuals and buySignal and EnableHunt and not na(lastBuySweepLowBar)
+    line.new(lastBuySweepLowBar, lastBuySweepLow, pivotBar, lastBuySweepLow, xloc=xloc.bar_index, color=Hunt_Buy_Color, style=line.style_dotted, width=2)
+
+if ShowSMCVisuals and sellSignal and EnableHunt and not na(lastSellSweepHighBar)
+    line.new(lastSellSweepHighBar, lastSellSweepHigh, pivotBar, lastSellSweepHigh, xloc=xloc.bar_index, color=Hunt_Sell_Color, style=line.style_dotted, width=2)
+
+if ShowSMCVisuals and buySignal and EnableFVG and bullFVG and not na(bullOff)
+    box.new(bar_index - bullOff - 2, bullTop, bar_index - bullOff, bullBottom, xloc=xloc.bar_index, bgcolor=FVG_Buy_Color, border_color=#008000)
+
+if ShowSMCVisuals and sellSignal and EnableFVG and bearFVG and not na(bearOff)
+    box.new(bar_index - bearOff - 2, bearTop, bar_index - bearOff, bearBottom, xloc=xloc.bar_index, bgcolor=FVG_Sell_Color, border_color=#FF0000)
+
+//------------------------------------------------------------------------------
+// Auto TP
+//------------------------------------------------------------------------------
+var line entryLine = na
+var line tp1Line = na
+var line tp2Line = na
+var line tp3Line = na
+var label entryLabel = na
+var label tp1Label = na
+var label tp2Label = na
+var label tp3Label = na
+
+if Auto_Draw_TP and buySignal and not na(zz1)
+    line.delete(entryLine)
+    line.delete(tp1Line)
+    line.delete(tp2Line)
+    line.delete(tp3Line)
+    label.delete(entryLabel)
+    label.delete(tp1Label)
+    label.delete(tp2Label)
+    label.delete(tp3Label)
+
+    entry = pivotLowPrice
+    target = zz1
+    dist = math.abs(target - entry)
+
+    if dist >= point * 10
+        tp1 = entry + dist * 0.5
+        tp2 = entry + dist
+        tp3 = entry + dist * 1.618
+        x1 = pivotBar
+        x2 = pivotBar + 100
+
+        entryLine := line.new(x1, entry, x2, entry, xloc=xloc.bar_index, color=TP_Entry_Color, width=2)
+        tp1Line := line.new(x1, tp1, x2, tp1, xloc=xloc.bar_index, color=TP1_Color, style=line.style_dashed)
+        tp2Line := line.new(x1, tp2, x2, tp2, xloc=xloc.bar_index, color=TP2_Color, style=line.style_dashed)
+        tp3Line := line.new(x1, tp3, x2, tp3, xloc=xloc.bar_index, color=TP3_Color, style=line.style_dashed)
+
+        entryLabel := label.new(x2, entry, "ENTRY - " + str.tostring(entry, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP_Entry_Color, textcolor=#000000)
+        tp1Label := label.new(x2, tp1, "TP1 (50%) - " + str.tostring(tp1, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP1_Color, textcolor=#000000)
+        tp2Label := label.new(x2, tp2, "TP2 (100%) - " + str.tostring(tp2, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP2_Color, textcolor=#000000)
+        tp3Label := label.new(x2, tp3, "TP3 (161.8%) - " + str.tostring(tp3, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP3_Color, textcolor=#FFFFFF)
+
+if Auto_Draw_TP and sellSignal and not na(zz1)
+    line.delete(entryLine)
+    line.delete(tp1Line)
+    line.delete(tp2Line)
+    line.delete(tp3Line)
+    label.delete(entryLabel)
+    label.delete(tp1Label)
+    label.delete(tp2Label)
+    label.delete(tp3Label)
+
+    entry = pivotHighPrice
+    target = zz1
+    dist = math.abs(entry - target)
+
+    if dist >= point * 10
+        tp1 = entry - dist * 0.5
+        tp2 = entry - dist
+        tp3 = entry - dist * 1.618
+        x1 = pivotBar
+        x2 = pivotBar + 100
+
+        entryLine := line.new(x1, entry, x2, entry, xloc=xloc.bar_index, color=TP_Entry_Color, width=2)
+        tp1Line := line.new(x1, tp1, x2, tp1, xloc=xloc.bar_index, color=TP1_Color, style=line.style_dashed)
+        tp2Line := line.new(x1, tp2, x2, tp2, xloc=xloc.bar_index, color=TP2_Color, style=line.style_dashed)
+        tp3Line := line.new(x1, tp3, x2, tp3, xloc=xloc.bar_index, color=TP3_Color, style=line.style_dashed)
+
+        entryLabel := label.new(x2, entry, "ENTRY - " + str.tostring(entry, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP_Entry_Color, textcolor=#000000)
+        tp1Label := label.new(x2, tp1, "TP1 (50%) - " + str.tostring(tp1, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP1_Color, textcolor=#000000)
+        tp2Label := label.new(x2, tp2, "TP2 (100%) - " + str.tostring(tp2, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP2_Color, textcolor=#000000)
+        tp3Label := label.new(x2, tp3, "TP3 (161.8%) - " + str.tostring(tp3, format.mintick), xloc=xloc.bar_index, style=label.style_label_left, color=TP3_Color, textcolor=#FFFFFF)
+
+//------------------------------------------------------------------------------
+// Update ZigZag state after signal calculation
+//------------------------------------------------------------------------------
+if validHigh
+    lastSellSweepHigh := pivotHighPrice
+    lastSellSweepHighBar := pivotBar
+    zz2 := zz1
+    zz2Bar := zz1Bar
+    zz1 := pivotHighPrice
+    zz1Bar := pivotBar
+    lastPivotPrice := pivotHighPrice
+
+if validLow
+    lastBuySweepLow := pivotLowPrice
+    lastBuySweepLowBar := pivotBar
+    zz2 := zz1
+    zz2Bar := zz1Bar
+    zz1 := pivotLowPrice
+    zz1Bar := pivotBar
+    lastPivotPrice := pivotLowPrice
+
+//------------------------------------------------------------------------------
+// Dashboard, same idea as MQ4: 200 MA direction by timeframe
+//------------------------------------------------------------------------------
+m1Dir = f_ma_dir("1")
+m5Dir = f_ma_dir("5")
+m15Dir = f_ma_dir("15")
+m30Dir = f_ma_dir("30")
+h1Dir = f_ma_dir("60")
+h4Dir = f_ma_dir("240")
+d1Dir = f_ma_dir("D")
+
+upCount = (m1Dir == 1 ? 1 : 0) + (m5Dir == 1 ? 1 : 0) + (m15Dir == 1 ? 1 : 0) + (m30Dir == 1 ? 1 : 0) + (h1Dir == 1 ? 1 : 0) + (h4Dir == 1 ? 1 : 0) + (d1Dir == 1 ? 1 : 0)
+dnCount = (m1Dir == -1 ? 1 : 0) + (m5Dir == -1 ? 1 : 0) + (m15Dir == -1 ? 1 : 0) + (m30Dir == -1 ? 1 : 0) + (h1Dir == -1 ? 1 : 0) + (h4Dir == -1 ? 1 : 0) + (d1Dir == -1 ? 1 : 0)
+
+overall = upCount >= 5 ? "STRONG BUY" : upCount >= 4 ? "BUY BIAS" : dnCount >= 5 ? "STRONG SELL" : dnCount >= 4 ? "SELL BIAS" : "RANGING / MIXED"
+overallColor = upCount >= 4 ? #00FF00 : dnCount >= 4 ? #FF0000 : #808080
+
+var table dash = table.new(position.top_left, 2, 12, border_width=1)
+
+if Show_Dashboard and barstate.islast
+    table.cell(dash, 0, 0, "MONSTER ARROWS v2.0", bgcolor=#000000, text_color=#FFD700)
+    table.cell(dash, 1, 0, "PINE", bgcolor=#000000, text_color=#FFD700)
+
+    table.cell(dash, 0, 1, "HTF")
+    table.cell(dash, 1, 1, f_tf_name(tf1) + " + " + f_tf_name(tf2) + (RequireBothHTF ? " BOTH" : " ANY"))
+
+    table.cell(dash, 0, 2, "SMC")
+    table.cell(dash, 1, 2, "Hunt " + (EnableHunt ? "ON" : "OFF") + " | FVG " + (EnableFVG ? "ON" : "OFF"))
+
+    table.cell(dash, 0, 3, "Signal")
+    table.cell(dash, 1, 3, buySignal ? "ACTIVE BUY" : sellSignal ? "ACTIVE SELL" : "Waiting")
+
+    table.cell(dash, 0, 4, "Overall")
+    table.cell(dash, 1, 4, overall, text_color=overallColor)
+
+    table.cell(dash, 0, 5, "M1")
+    table.cell(dash, 1, 5, f_dir_txt(m1Dir), text_color=f_dir_color(m1Dir))
+
+    table.cell(dash, 0, 6, "M5")
+    table.cell(dash, 1, 6, f_dir_txt(m5Dir), text_color=f_dir_color(m5Dir))
+
+    table.cell(dash, 0, 7, "M15")
+    table.cell(dash, 1, 7, f_dir_txt(m15Dir), text_color=f_dir_color(m15Dir))
+
+    table.cell(dash, 0, 8, "M30")
+    table.cell(dash, 1, 8, f_dir_txt(m30Dir), text_color=f_dir_color(m30Dir))
+
+    table.cell(dash, 0, 9, "H1")
+    table.cell(dash, 1, 9, f_dir_txt(h1Dir), text_color=f_dir_color(h1Dir))
+
+    table.cell(dash, 0, 10, "H4")
+    table.cell(dash, 1, 10, f_dir_txt(h4Dir), text_color=f_dir_color(h4Dir))
+
+    table.cell(dash, 0, 11, "D1")
+    table.cell(dash, 1, 11, f_dir_txt(d1Dir), text_color=f_dir_color(d1Dir))
+
+//------------------------------------------------------------------------------
+// Alerts
+//------------------------------------------------------------------------------
+alertcondition(Enable_Alerts and buySignal, "Monster V2 BUY", "Monster V2 BUY signal")
+alertcondition(Enable_Alerts and sellSignal, "Monster V2 SELL", "Monster V2 SELL signal")
