@@ -1,0 +1,424 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  SESSION PULSE v2  ·  Pine v6  ·  pane oscillator for day-trading monitoring
+//
+//  Reads the market you are in, right now, against what the SAME CLOCK TIME
+//  normally looks like. Built for 1m to 15m charts on real exchange volume
+//  (CME_MINI:MNQ1!, COMEX:MGC1!), not a CFD feed.
+//
+//  RIBBON  rolling relative volume: the last N minutes of volume against the
+//          median of the same minutes over the last 20 sessions. Log2 scale,
+//          so 2x and 0.5x sit symmetric around the 1.0x axis.
+//  AMBER   rolling relative range: the same comparison for bar true range.
+//  GREY    block volume so far: volume since the session block opened
+//          (Asia, London, New York, Oslo time) against a usual block by now.
+//  LANES   top: market state · middle: aggressor delta · bottom: block range
+//          spent against a usual block of the same kind.
+//
+//  STATES  (Wyckoff effort vs result, after Anna Coulling's Volume Price
+//          Analysis; contraction before expansion, after Toby Crabel)
+//    LIVE    volume hot, range above usual, price moving efficiently
+//    ACTIVE  volume and range at or above usual, price moving efficiently
+//    NORMAL  nothing unusual
+//    ABSORB  volume above usual on small bars: effort without result
+//    THIN    big bars on low volume: a move nobody is trading
+//    CHOP    price path long, net move short (efficiency ratio low)
+//  A state shows only after it held 3 bars, so it does not flicker.
+//    COIL    ranges contracted to the narrowest of the lookback, quiet tape
+//    DEAD    volume far below usual for this clock time
+//
+//  Live-bar handling: on the forming bar the expected volume is scaled by the
+//  share of the bar already elapsed, so a bar 10 s old is not read as dead.
+//  Baselines are medians of the stored sessions, so one CPI or FOMC minute
+//  does not distort that clock minute for weeks. Each bar is stored only
+//  after it closes, so a session never averages itself.
+//
+//  Clock slots use exchange time. Between the EU and US clock changes
+//  (about one week in late March and late October) the London-hours slots
+//  sit one hour off their history.
+//  Nothing here is backtested and no predictive claim is attached to any
+//  state. Delta needs a TradingView plan with footprint data (Premium+).
+// ─────────────────────────────────────────────────────────────────────────────
+
+//@version=6
+indicator("Session Pulse v2", "PULSE2", overlay = false, max_lines_count = 200)
+
+// ── inputs ───────────────────────────────────────────────────────────────────
+gRv = "1 · Participation (relative volume)"
+rvDays  = input.int(20, "Sessions in the baseline", minval = 5, maxval = 40, group = gRv, tooltip = "Each clock slot keeps the last N sessions and uses their median.")
+minDays = input.int(5, "Sessions before readings show", minval = 3, maxval = 20, group = gRv)
+winMin  = input.int(15, "Rolling window (minutes)", minval = 1, maxval = 120, group = gRv, tooltip = "Volume, range and delta are summed over this window. 15 minutes on a 1m chart = 15 bars, on a 5m chart = 3 bars.")
+hotLvl  = input.float(1.5, "Hot at (x usual)", minval = 1.0, step = 0.1, group = gRv)
+deadLvl = input.float(0.5, "Dead at (x usual)", minval = 0.1, maxval = 1.0, step = 0.05, group = gRv)
+
+gSt = "2 · Market state"
+absRatio  = input.float(1.4, "Absorb: volume / range at least", minval = 1.1, step = 0.05, group = gSt, tooltip = "Relative volume divided by relative range, with volume at or above usual. 1.4 = 40% more volume than the range shows. On real MNQ 1m (Jun-Sep 2026) this flagged 4-8% of bars.")
+thinRatio = input.float(1.4, "Thin: range / volume at least", minval = 1.1, step = 0.05, group = gSt, tooltip = "Relative range divided by relative volume, with range at or above usual.")
+erLen     = input.int(20, "Momentum window (bars)", minval = 4, maxval = 100, group = gSt, tooltip = "Efficiency ratio = net move / total path over this many bars. 1.0 is a straight line, near 0 is back and forth. On MNQ 1m, ER(20) has median 0.20.")
+chopEr    = input.float(0.10, "Chop below efficiency", minval = 0.02, maxval = 0.9, step = 0.01, group = gSt, tooltip = "0.10 on ER(20) flagged about 19% of MNQ 1m bars, Jun-Sep 2026.")
+trendEr   = input.float(0.35, "Live needs efficiency at least", minval = 0.05, maxval = 0.95, step = 0.05, group = gSt)
+confBars  = input.int(3, "State must hold (bars) before it shows", minval = 1, maxval = 10, group = gSt, tooltip = "Stops the state flickering bar to bar. 3 bars gave runs of 6-14 bars on MNQ 1m.")
+coilLen  = input.int(6, "Coil: range window (bars)", minval = 2, maxval = 50, group = gSt)
+coilLook = input.int(30, "Coil: narrowest of the last N bars", minval = 5, maxval = 300, group = gSt)
+
+gBk = "3 · Session blocks"
+bkTz    = input.string("Europe/Oslo", "Time zone of the blocks", group = gBk)
+asiaS   = input.session("0200-0700", "Asia", group = gBk)
+lonS    = input.session("0900-1530", "London", group = gBk)
+nyS     = input.session("1530-2200", "New York", group = gBk)
+roomLvl = input.float(40, "Room below (% of a usual block)", minval = 0, maxval = 100, group = gBk)
+fullLvl = input.float(100, "Spent at (% of a usual block)", minval = 50, maxval = 200, group = gBk)
+
+gDl = "4 · Aggressor delta (footprint)"
+useDelta = input.bool(true, "Read footprint delta", group = gDl, tooltip = "Needs footprint data (TradingView Premium or higher) on a real futures symbol. Turn off if your plan has none.")
+fpTicks  = input.int(4, "Ticks per footprint row", minval = 1, maxval = 20, group = gDl, tooltip = "Fetch resolution only; the bar's total delta does not change.")
+imbThr   = input.float(0.12, "One-sided at |delta| / volume of", minval = 0.02, maxval = 0.5, step = 0.01, group = gDl)
+
+gVis = "5 · Look"
+colHot   = input.color(#7DF3FF, "Hot / Live", group = gVis)
+colRoom  = input.color(#00E5C3, "Room", group = gVis)
+colSpnt  = input.color(#FF4D6D, "Spent / Chop", group = gVis)
+colAbs   = input.color(#FFB547, "Absorb", group = gVis)
+colCoil  = input.color(#3FA7D6, "Coil", group = gVis)
+showHud  = input.bool(true, "Pane readout", group = gVis)
+showMark = input.bool(true, "Mark 08:30 and 09:30 New York", group = gVis)
+showBar  = input.bool(false, "Show single-bar volume pace dots", group = gVis)
+tintBg   = input.bool(false, "Tint the pane by state", group = gVis)
+
+// shared design tokens (keep identical to Trend_Hub.pine)
+cBg   = color.new(#070B12, 8)
+cGrid = color.new(#101827, 0)
+cMute = #5A6B7E
+cText = #C9D6E3
+cDead = #39444F
+cThin = #FF8A3D
+
+// ── timeframe guard and clock slots ──────────────────────────────────────────
+tfSec = timeframe.in_seconds(timeframe.period)
+if timeframe.isdwm
+    runtime.error("Session Pulse v2 needs an intraday chart (30 seconds to 60 minutes).")
+slotCount = math.max(1, math.ceil(86400.0 / tfSec))
+if slotCount * rvDays > 100000
+    runtime.error("Timeframe too small for this many baseline sessions. Use 30s or higher, or fewer sessions.")
+
+secOfDay = hour(time, syminfo.timezone) * 3600 + minute(time, syminfo.timezone) * 60 + second(time, syminfo.timezone)
+slot     = math.min(slotCount - 1, int(secOfDay / tfSec))
+trv      = ta.tr(true)
+
+// ── session blocks: Asia, London, New York, and the gaps between them ────────
+inA = not na(time(timeframe.period, asiaS, bkTz))
+inL = not na(time(timeframe.period, lonS, bkTz))
+inN = not na(time(timeframe.period, nyS, bkTz))
+realId = inA ? 1 : inL ? 2 : inN ? 3 : 0
+newDay = timeframe.change("D")
+
+var int  lastReal = 0
+var bool rolled   = false
+if newDay
+    rolled := true
+if realId > 0
+    lastReal := realId
+    rolled   := false
+// 1-3 = real blocks; 4-7 = gap after block 0-3; 8-11 = same gap after the CME day rollover
+blockIdx = realId > 0 ? realId : 4 + lastReal + (rolled ? 4 : 0)
+
+var float segHi   = na
+var float segLo   = na
+var float segCum  = 0.0
+var int   segBars = 0
+var bool  segFull = false        // false while the segment started before the first loaded bar
+var matrix<float> mBlk   = matrix.new<float>(12, rvDays, na)
+var array<int>    blkCnt = array.new<int>(12, 0)
+
+segStart = bar_index == 0 ? true : (blockIdx != blockIdx[1] or newDay)
+if segStart
+    if segFull
+        int pid = blockIdx[1]
+        int pc  = array.get(blkCnt, pid)
+        matrix.set(mBlk, pid, pc % rvDays, segHi - segLo)
+        array.set(blkCnt, pid, pc + 1)
+    segFull := bar_index > 0
+    segHi   := high
+    segLo   := low
+    segCum  := nz(volume)
+    segBars := 0
+else
+    segBars += 1
+    segHi  := math.max(segHi, high)
+    segLo  := math.min(segLo, low)
+    segCum += nz(volume)
+segRange = segHi - segLo
+
+// ── per-slot baselines: last N sessions, stored after each bar closes ────────
+var matrix<float> mVol = matrix.new<float>(slotCount, rvDays, na)
+var matrix<float> mTr  = matrix.new<float>(slotCount, rvDays, na)
+var matrix<float> mSeg = matrix.new<float>(slotCount, rvDays, na)
+var matrix<float> mCum = matrix.new<float>(slotCount, rvDays, na)
+var array<int>    slotCnt = array.new<int>(slotCount, 0)
+
+if bar_index > 0
+    int ps   = slot[1]
+    int pc   = array.get(slotCnt, ps)
+    int pcol = pc % rvDays
+    matrix.set(mVol, ps, pcol, nz(volume[1]))
+    matrix.set(mTr,  ps, pcol, nz(trv[1]))
+    matrix.set(mSeg, ps, pcol, nz(segRange[1]))
+    matrix.set(mCum, ps, pcol, segCum[1])
+    array.set(slotCnt, ps, pc + 1)
+
+f_med(matrix<float> m, int row, int n) =>
+    float out = na
+    if n > 0
+        out := array.median(array.slice(matrix.row(m, row), 0, n))
+    out
+
+nNow   = math.min(array.get(slotCnt, slot), rvDays)
+ready  = nNow >= minDays
+expV   = ready ? f_med(mVol, slot, nNow) : na
+expTr  = ready ? f_med(mTr,  slot, nNow) : na
+expSeg = ready ? f_med(mSeg, slot, nNow) : na
+expCum = ready ? f_med(mCum, slot, nNow) : na
+
+// share of the forming bar already elapsed (1.0 on every closed bar)
+float frac = 1.0
+if barstate.isrealtime and not na(time_close) and time_close > time
+    frac := math.max(0.05, math.min(1.0, (timenow - time) / (time_close - time)))
+
+// ── 1 · participation ────────────────────────────────────────────────────────
+k        = math.max(1, math.round(winMin * 60.0 / tfSec))
+readyAll = math.sum(ready ? 1 : 0, k) == k
+
+sumV   = math.sum(nz(volume), k)
+sumEV  = math.sum(nz(expV), k) - nz(expV) * (1 - frac)
+rollRv = readyAll and sumEV > 0 ? sumV / sumEV : na
+barRv  = ready and not na(expV) and expV > 0 ? nz(volume) / (expV * frac) : na
+
+expCumNow = nz(expCum) - nz(expV) * (1 - frac)
+blkRv     = ready and segFull and expCumNow > 0 ? segCum / expCumNow : na
+
+// ── 2 · range: rolling relative range, block pace, block spent ──────────────
+// range grows roughly with the square root of time, so the live bar uses sqrt(frac)
+sumTr  = math.sum(nz(trv), k)
+sumET  = math.sum(nz(expTr), k) - nz(expTr) * (1 - math.sqrt(frac))
+rollRr = readyAll and sumET > 0 ? sumTr / sumET : na
+
+paceR = ready and segFull and not na(expSeg) and expSeg > 0 ? segRange / expSeg : na
+
+nBlk   = math.min(array.get(blkCnt, blockIdx), rvDays)
+medBlk = nBlk >= 3 ? f_med(mBlk, blockIdx, nBlk) : na
+spent  = segFull and not na(medBlk) and medBlk > 0 ? 100 * segRange / medBlk : na
+
+// ── 3 · momentum and compression ─────────────────────────────────────────────
+netMove = close - close[erLen]
+path    = math.sum(math.abs(close - close[1]), erLen)
+er      = not na(path) and path > 0 ? math.abs(netMove) / path : na
+
+// ta calls sit outside and/or: v6 evaluates and/or lazily, which would skip bars
+coilWin = ta.highest(high, coilLen) - ta.lowest(low, coilLen)
+coilMin = ta.lowest(coilWin, coilLook)
+coil    = not na(coilWin) and coilWin <= coilMin and nz(rollRr, 1.0) < 1.0
+
+// ── 4 · aggressor delta ──────────────────────────────────────────────────────
+fp = useDelta ? request.footprint(fpTicks, 70, 300) : na
+float dBar = not na(fp) ? footprint.delta(fp) : na
+float vBar = not na(fp) ? footprint.total_volume(fp) : na
+fpN      = math.sum(na(dBar) ? 0 : 1, k)
+sumD     = math.sum(nz(dBar), k)
+sumFv    = math.sum(nz(vBar), k)
+imb      = fpN == k and sumFv > 0 ? sumD / sumFv : na
+priceDir = close - close[k]
+
+// ── state ────────────────────────────────────────────────────────────────────
+// 0 warming · 1 dead · 2 coil · 3 absorb · 4 thin · 5 chop · 6 live · 7 normal · 8 active
+int rawSt = 0
+if not na(rollRv) and not na(rollRr)
+    if rollRv <= deadLvl
+        rawSt := coil ? 2 : 1
+    else if rollRv >= 1.0 and rollRv >= absRatio * rollRr
+        rawSt := 3
+    else if rollRr >= 1.0 and rollRr >= thinRatio * rollRv
+        rawSt := 4
+    else if not na(er) and er < chopEr
+        rawSt := coil ? 2 : 5
+    else if rollRv >= hotLvl and rollRr >= 1.0 and nz(er) >= trendEr
+        rawSt := 6
+    else if rollRv >= 1.0 and rollRr >= 1.0 and nz(er) >= trendEr
+        rawSt := 8
+    else
+        rawSt := 7
+
+// the shown state changes only after the raw state held confBars bars in a row
+var int st     = 0
+var int streak = 0
+streak := rawSt == nz(rawSt[1], -1) ? streak + 1 : 1
+if rawSt == 0 or streak >= confBars
+    st := rawSt
+
+stName(int s) =>
+    switch s
+        1 => "DEAD"
+        2 => "COIL"
+        3 => "ABSORB"
+        4 => "THIN"
+        5 => "CHOP"
+        6 => "LIVE"
+        7 => "NORMAL"
+        8 => "ACTIVE"
+        => "WARMING UP"
+
+stCol(int s) =>
+    switch s
+        1 => cDead
+        2 => colCoil
+        3 => colAbs
+        4 => cThin
+        5 => colSpnt
+        6 => colHot
+        7 => #8FA3B8
+        8 => #4FB8CC
+        => cMute
+
+stHint(int s) =>
+    switch s
+        1 => "volume far below this clock time"
+        2 => "range contracted, quiet tape"
+        3 => "effort without result"
+        4 => "big bars, little volume"
+        5 => "path long, net move short"
+        6 => "hot volume, clean move"
+        7 => "nothing unusual"
+        8 => "usual-or-better volume, clean move"
+        => ""
+
+blkName(int id) =>
+    switch id
+        1 => "Asia"
+        2 => "London"
+        3 => "New York"
+        4 => "off-hours"
+        5 => "after Asia"
+        6 => "after London"
+        7 => "after New York"
+        => "overnight"
+
+// ── colour helpers ───────────────────────────────────────────────────────────
+f_l2(float v) => not na(v) and v > 0 ? math.max(-2.0, math.min(2.0, math.log(v) / math.log(2))) : na
+
+rvCol(x) =>
+    x >= 0 ? color.from_gradient(x, 0.0, 2.0, color.new(colHot, 55), color.new(#EAFBFF, 0)) :
+             color.from_gradient(-x, 0.0, 2.0, color.new(cMute, 45), color.new(cDead, 10))
+
+roomCol(p) => color.from_gradient(p, roomLvl, fullLvl, colRoom, colSpnt)
+
+imbCol(x) =>
+    x >= 0 ? color.from_gradient(x, 0.0, 0.3, color.new(cMute, 60), color.new(colRoom, 10)) :
+             color.from_gradient(-x, 0.0, 0.3, color.new(cMute, 60), color.new(colSpnt, 10))
+
+// ── geometry: ribbon around 1.0x, range and block lines, three floor lanes ───
+r   = nz(f_l2(rollRv), 0.0)
+thk = 0.10 + 0.45 * math.abs(r)
+pT = plot(r + thk, "Pulse top",    color = color.new(rvCol(r), 35), linewidth = 1)
+pB = plot(r - thk, "Pulse bottom", color = color.new(rvCol(r), 35), linewidth = 1)
+fill(pT, pB, color = rvCol(r), title = "Participation ribbon")
+plot(r, "Pulse core", color = rvCol(r), linewidth = 2)
+
+plot(f_l2(rollRr), "Relative range (rolling)", color = color.new(#FFB547, 20), linewidth = 1)
+plot(f_l2(blkRv),  "Block volume so far",      color = color.new(#C9D6E3, 55), linewidth = 1, style = plot.style_stepline)
+plot(showBar ? f_l2(barRv) : na, "Single-bar pace", color = color.new(colHot, 60), style = plot.style_circles, linewidth = 1)
+
+hline(0, "1.0x usual", color = color.new(#101827, 40))
+hline(math.log(hotLvl) / math.log(2),  "Hot line",  color = color.new(#7DF3FF, 78), linestyle = hline.style_dotted)
+hline(math.log(deadLvl) / math.log(2), "Dead line", color = color.new(#5A6B7E, 78), linestyle = hline.style_dotted)
+
+l1 = plot(-2.20, "Lane 1 top",    color = na, editable = false)
+l2 = plot(-2.50, "Lane 1 bottom", color = na, editable = false)
+l3 = plot(-2.60, "Lane 2 top",    color = na, editable = false)
+l4 = plot(-2.90, "Lane 2 bottom", color = na, editable = false)
+l5 = plot(-3.00, "Lane 3 top",    color = na, editable = false)
+l6 = plot(-3.30, "Lane 3 bottom", color = na, editable = false)
+fill(l1, l2, color = color.new(stCol(st), 20), title = "State lane")
+fill(l3, l4, color = na(imb) ? color.new(cMute, 85) : imbCol(imb), title = "Delta lane")
+fill(l5, l6, color = na(spent) ? color.new(cMute, 85) : color.new(roomCol(math.min(150.0, spent)), 25), title = "Block range lane")
+
+plot( 2.7, "Scale pin +", color = color.new(color.gray, 100), editable = false)
+plot(-3.5, "Scale pin -", color = color.new(color.gray, 100), editable = false)
+
+bgcolor(tintBg and st > 0 ? color.new(stCol(st), 92) : na, title = "State tint")
+
+// ── 08:30 and 09:30 New York markers (lines only, no text) ───────────────────
+etSec   = hour(time, "America/New_York") * 3600 + minute(time, "America/New_York") * 60 + second(time, "America/New_York")
+etDow   = dayofweek(time, "America/New_York")
+weekday = etDow >= dayofweek.monday and etDow <= dayofweek.friday
+mark830 = weekday and etSec <= 30600 and 30600 < etSec + tfSec
+mark930 = weekday and etSec <= 34200 and 34200 < etSec + tfSec
+if showMark and mark830
+    line.new(bar_index, 2.5, bar_index, -2.1, color = color.new(#FFB547, 55), style = line.style_dotted, width = 1)
+if showMark and mark930
+    line.new(bar_index, 2.5, bar_index, -2.1, color = color.new(#C9D6E3, 50), style = line.style_dashed, width = 1)
+
+// ── pane readout ─────────────────────────────────────────────────────────────
+var table hud = table.new(position.top_right, 2, 7, bgcolor = cBg, frame_color = cGrid, frame_width = 2, border_color = color.new(#101827, 60), border_width = 1)
+
+f_x(float v) => na(v) ? "–" : str.tostring(v, "0.0#") + "x"
+
+if showHud and barstate.islast
+    warm = st == 0
+    stTxt = warm ? "warming up · " + str.tostring(nNow) + "/" + str.tostring(minDays) + " sessions" : stName(st) + " · " + stHint(st)
+    // a whole block under 40% of usual volume is a contract roll or a holiday more often than a quiet market
+    if realId > 0 and segBars >= k and not na(blkRv) and blkRv < 0.4
+        stTxt += " · block volume " + f_x(blkRv) + ": roll or holiday?"
+
+    rvTxt = str.tostring(winMin) + "m " + f_x(rollRv) + " · bar " + f_x(barRv) + " · block " + f_x(blkRv)
+    rgTxt = f_x(rollRr) + " usual bar range"
+
+    erTxt = na(er) ? "–" : "ER " + str.tostring(er, "0.00") + (netMove > 0 ? " ▲" : netMove < 0 ? " ▼" : "") + (er >= trendEr ? " · trending" : er < chopEr ? " · going nowhere" : "")
+
+    string dlTxt = "off"
+    color  dlCol = cMute
+    if useDelta
+        if na(imb)
+            dlTxt := "no footprint data"
+        else
+            pct = (imb >= 0 ? "+" : "") + str.tostring(math.round(imb * 100)) + "% "
+            if math.abs(imb) < imbThr
+                dlTxt := pct + "two-sided"
+                dlCol := cText
+            else if imb > 0
+                dlTxt := pct + (priceDir >= 0 ? "buyers in control" : "buyers absorbed")
+                dlCol := priceDir >= 0 ? colRoom : colAbs
+            else
+                dlTxt := pct + (priceDir <= 0 ? "sellers in control" : "sellers absorbed")
+                dlCol := priceDir <= 0 ? colSpnt : colAbs
+
+    bkTxt = blkName(blockIdx) + " · pace " + f_x(paceR) + " · " + (na(spent) ? "–" : str.tostring(math.round(spent)) + "% spent") + (not na(spent) and spent >= fullLvl ? " · SPENT" : not na(spent) and spent <= roomLvl ? " · ROOM" : "")
+    bkCol = na(spent) ? cMute : roomCol(math.min(150.0, spent))
+
+    rvC = na(rollRv) ? cMute : rollRv >= hotLvl ? colHot : rollRv <= deadLvl ? cMute : cText
+
+    table.cell(hud, 0, 0, "⬡ SESSION PULSE v2", text_color = #7DF3FF, text_size = size.small, text_halign = text.align_left)
+    table.merge_cells(hud, 0, 0, 1, 0)
+    table.cell(hud, 0, 1, "STATE",    text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 1, stTxt,      text_color = stCol(st), text_size = size.small, text_halign = text.align_right)
+    table.cell(hud, 0, 2, "VOLUME",   text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 2, rvTxt,      text_color = rvC, text_size = size.small, text_halign = text.align_right)
+    table.cell(hud, 0, 3, "RANGE",    text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 3, rgTxt,      text_color = na(rollRr) ? cMute : cText, text_size = size.small, text_halign = text.align_right)
+    table.cell(hud, 0, 4, "MOMENTUM", text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 4, erTxt,      text_color = na(er) ? cMute : er >= trendEr ? colHot : er < chopEr ? colSpnt : cText, text_size = size.small, text_halign = text.align_right)
+    table.cell(hud, 0, 5, "DELTA",    text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 5, dlTxt,      text_color = dlCol, text_size = size.small, text_halign = text.align_right)
+    table.cell(hud, 0, 6, "BLOCK",    text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hud, 1, 6, bkTxt,      text_color = bkCol, text_size = size.small, text_halign = text.align_right)
+
+// ── alerts ───────────────────────────────────────────────────────────────────
+goneLive  = st == 6 and st[1] != 6
+goneDead  = st == 1 and st[1] != 1
+goneAbs   = st == 3 and st[1] != 3
+goneCoil  = st == 2 and st[1] != 2
+goneHot   = not na(rollRv) and rollRv >= hotLvl and nz(rollRv[1]) < hotLvl
+blkSpent  = not na(spent) and spent >= fullLvl and nz(spent[1]) < fullLvl
+alertcondition(goneLive, "Pulse v2 · state LIVE",        "Hot volume, range above usual, efficient move")
+alertcondition(goneDead, "Pulse v2 · state DEAD",        "Volume far below usual for this clock time")
+alertcondition(goneAbs,  "Pulse v2 · state ABSORB",      "Volume above usual on small bars")
+alertcondition(goneCoil, "Pulse v2 · state COIL",        "Range contracted to the narrowest of the lookback")
+alertcondition(goneHot,  "Pulse v2 · volume went hot",   "Rolling relative volume crossed the hot threshold")
+alertcondition(blkSpent, "Pulse v2 · block range spent", "This session block has used a usual block's range")
