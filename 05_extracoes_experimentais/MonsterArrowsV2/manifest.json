@@ -1,0 +1,54 @@
+{
+  "identifier": "monster_arrows_v2_smc_pine_conversion",
+  "display_name": "Monster Arrows v2.0 SMC - MQ4 Logic Conversion",
+  "source_platform": "TradingView Pine Script v5",
+  "type": "indicator_not_strategy",
+  "components": [
+    {
+      "module": "confirmed_pivots",
+      "priority": "alta",
+      "status": "extracted_synthetic_test_only"
+    },
+    {
+      "module": "liquidity_sweep_reclaim",
+      "priority": "alta",
+      "status": "improved_variant_synthetic_test_only"
+    },
+    {
+      "module": "fair_value_gap",
+      "priority": "alta",
+      "status": "extracted_synthetic_test_only"
+    },
+    {
+      "module": "higher_timeframe_confirmation",
+      "priority": "alta",
+      "status": "specification_only"
+    },
+    {
+      "module": "atr_wilder",
+      "priority": "media",
+      "status": "extracted_synthetic_test_only"
+    },
+    {
+      "module": "fibonacci",
+      "priority": "media",
+      "status": "extracted_synthetic_test_only"
+    },
+    {
+      "module": "sma200_multitimeframe",
+      "priority": "baixa",
+      "status": "dashboard_only_in_source"
+    },
+    {
+      "module": "auto_tp",
+      "priority": "baixa",
+      "status": "not_extracted_retroactive_entry"
+    }
+  ],
+  "backtest_status": "not_run",
+  "tradingview_compilation_status": "not_run",
+  "mt5_integration_status": "not_run",
+  "real_money_ready": false,
+  "source_preserved": true,
+  "source_sha256": "7eef0f410a7d27f81cf16948600862e810d640d3bc17c506a22d2c423213cecc"
+}

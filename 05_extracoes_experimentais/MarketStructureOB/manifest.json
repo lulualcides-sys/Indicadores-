@@ -1,0 +1,13 @@
+{
+  "id": "MSD_OB",
+  "original_filename": "Indicator_Market_Structure_Dynamics_&_Order_Blocks_for_TradingView.txt",
+  "archived_filename": "MarketStructure_Dynamics_OrderBlocks_original.txt",
+  "bytes": 18367,
+  "sha256": "923142941d9406e7d6c321aa910eac675caef60af629ca5fcc001ee65eccac23",
+  "source_language": "TradingView Pine Script v6",
+  "date": "2026-11-10",
+  "unit_tests_passed": 10,
+  "backtests_executed": 0,
+  "status": "research_only_not_validated",
+  "existing_robots_modified": false
+}
