@@ -1,0 +1,19 @@
+name: Nexus Structure Break NR — testes
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/Nexus_Structure_Break/**'
+      - '.github/workflows/nexus-structure-nr.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/Nexus_Structure_Break/**'
+      - '.github/workflows/nexus-structure-nr.yml'
+jobs:
+  pivot-causal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s 03_projetos_proprios/Nexus_Structure_Break/tests -p 'test_*.py' -v
