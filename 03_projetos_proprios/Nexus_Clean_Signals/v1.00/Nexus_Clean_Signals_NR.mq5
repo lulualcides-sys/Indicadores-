@@ -342,8 +342,12 @@ int OnCalculate(const int rates_total,const int prev_calculated,
    const double currentER=ERBefore(1,rates_total,close);
    string state="WAIT";
    if(directionLast!=0)
-      state=(directionLast>0 ? "BUY " : "SELL ")+lastKind+
+     {
+      const string age=(lastSignalIndex==1 ? "CONFIRMED " :
+                        "LAST "+IntegerToString(lastSignalIndex)+" bars ago ");
+      state=age+(directionLast>0 ? "BUY " : "SELL ")+lastKind+
             " "+DoubleToString(lastScore,2);
+     }
    const string info="NEXUS CLEAN  |  "+_Symbol+"  |  "+ModeName()+
                      "  |  ER "+DoubleToString(currentER,2)+
                      "  |  "+state;
