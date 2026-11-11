@@ -24,6 +24,14 @@ Cinco autores com licença explícita (MIT ou MPL-2.0), total de 27 scripts e 37
 
 23 novos candidatos encontrados em publicações públicas do Telegram, com priorização de H1 MTF, Turtle Soup, VSA e sessões. [Relatório](09_pesquisa_telegram/SEGUNDA_VARREDURA_2026-11-11.md) | [Catálogo](09_pesquisa_telegram/NOVOS_CANDIDATOS_2026-11-11.csv). São links para anexos anunciados; arquivos não foram baixados.
 
+## Telegram: quatro códigos-fonte MQ5 realmente recuperados
+
+A pesquisa de [@ShepherdFxTradingTools](https://t.me/s/ShepherdFxTradingTools) levou ao site público do publicador, que oferece ZIPs com código-fonte. Um GitHub Actions **baixou, extraiu e verificou 4 arquivos `.mq5` reais**; foram copiados sem executá-los, separados dos nossos dez Nexus.
+
+[Abrir os 4 originais](08_indicadores_originais/12_utt_telegram_sources/README.md) · [Manifesto de downloads e SHA-256](08_indicadores_originais/12_utt_telegram_sources/manifesto_downloads.json) · [Auditoria técnica preliminar](04_auditorias/TELEGRAM_FONTE_REAL_MQ5_2026-11-11.md).
+
+Licenças informadas pelos distribuidores: **MPL-2.0** (2 códigos) e **CC BY-NC-SA 4.0** (2 códigos, uso não comercial). Autoria e cabeçalhos originais preservados. Compilação MetaEditor e testes financeiros pendentes.
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |
