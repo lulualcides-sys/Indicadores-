@@ -1,0 +1,799 @@
+//@version=6
+indicator("MWM Po3 4H", "MWM Po3", true, max_boxes_count=500, max_lines_count=500, max_labels_count=500)
+
+// MWM Po3 4H - a mechanical reading of Jacktrades' "10 a.m. PO3" model.
+// Source: his public videos HW7U-4nG998, QJMrpl9vv34, JlyaRai4Du8 and his PO3
+// Bootcamp series (tsHwO4JT1ww, N0ZB-W2_c0s, jVWZRDaGccs, QP7XmF6lWA4, bi03dcIKo-k,
+// 4-6gqUJyjWw, zKpy2likDdA, BEbAQKVqk-8, eD545udVkUc). The model is his; this
+// file is an unofficial translation of it into rules.
+//
+// The model trades ONE candle: the 4-hour candle that opens at 10:00 New York
+// (optionally 14:00). A bullish 4H candle opens, prints its LOW wick first,
+// then expands. On the 1-minute chart that wick is a Power of Three:
+//   1. Accumulation  - price goes sideways around the 4H open
+//   2. Manipulation  - price takes out the accumulation low, taps the nearest
+//                      15m (else 5m) bullish FVG and so prints the 4H low
+//   3. Distribution  - entered on "order flow confirmation": a bearish 1m FVG
+//                      is disrespected (iFVG, or a CISD), then a NEW bullish
+//                      1m FVG formed after the low is tapped and respected
+// Stop = the manipulation extreme (the 4H low). Bearish candle = mirror image.
+//
+// What the indicator draws and checks:
+// - Accumulation box: the 4H candle's range up to the manipulation break, plus the
+//   pre-open bars when they were sideways.
+// - Days to skip: the trading day before CPI or FOMC, FOMC day, optional Mondays,
+//   and your own list of dates.
+// - Blocked entries: manipulation too deep without a gap, the other side of the box
+//   taken before the entry, a close through the nearest 15m/1H gap, and 10:00
+//   entries held until 11:00 after a big opening hour. A grey x marks each blocked
+//   entry; hover it for the reason.
+// - Gap grades: 15m or 1H = A, 5m = B, 1m = C. A 1m-only tap counts only at 14:00,
+//   and the 14:00 window only runs when 10:00 gave no entry.
+// - Entry label extras: "+" = price closed back through the 4H open after the wick,
+//   "SMT" = ES held its box edge while this chart broke it. His target line is the
+//   box's other edge when that is at least 1R away, else 1R with a break-even mark
+//   once the box edge breaks.
+//
+// What is mechanical here and what is not:
+// - Bias is discretionary in the videos. The default filter is his own tip: the
+//   previous 4H candle's direction, overruled by a swept and reclaimed previous-day
+//   extreme. With the filter Off both directions run and the first to complete wins.
+// - The stats table is touch-based on chart bars, with no fees and no slippage. It
+//   tells you whether the indicator marks what he marks. It is NOT a backtest.
+// - Non-repainting: all state changes on bar close; HTF gaps use confirmed bars.
+// - Checked against the three trades he shows on screen (16 Oct 2024 14:00,
+//   24 Dec 2024 10:00, 14 Sep 2026 10:00): a bar-by-bar replay of these rules
+//   enters on his bars, 14:09, 10:22 and 11:05 New York.
+
+// ── Inputs ─────────────────────────────────────────────────────────
+string TZ = "America/New_York"
+
+grpW = "01. 4H candle windows (New York time)"
+w10 = input.bool(true, "10:00 candle", group=grpW, tooltip="The model's home window: the 4H candle that opens 30 minutes after the cash open.")
+w14 = input.bool(true, "14:00 candle", group=grpW, tooltip="Second window shown in the checklist video (2 p.m. Po3).")
+w06 = input.bool(false, "06:00 candle", group=grpW)
+w02 = input.bool(false, "02:00 candle", group=grpW)
+w18 = input.bool(false, "18:00 candle", group=grpW)
+w22 = input.bool(false, "22:00 candle", group=grpW)
+maxEntryMin = input.int(120, "Setup must complete within N minutes of the open", minval=10, maxval=240, group=grpW, tooltip="Video examples completed 22, 12 and about 65 minutes after the open.")
+only14 = input.bool(true, "14:00 only when 10:00 gave no entry", group=grpW, tooltip="Checklist video 00:36: the 2 p.m. Po3 is for days when price action is slow or the setup does not occur at 10 a.m.")
+
+grpS = "02. Days to skip"
+skipMon = input.bool(false, "Skip Mondays", group=grpS, tooltip="His 2024-25 videos: 'I don't trade Mondays' (first video 00:47, Bootcamp 'When not to trade' 08:25). OFF by default because his newest example, 14 Sep 2026, is a Monday.")
+skipEve = input.bool(true, "Skip the trading day before CPI or FOMC", group=grpS, tooltip="Bootcamp 'When not to trade' 01:35-02:00: the day before CPI or FOMC is chop, big players are not ready to fill. Built-in dates: bls.gov CPI releases and federalreserve.gov FOMC decision days, Feb 2024 to Dec 2026. Add later dates in the box below.")
+skipFomc = input.bool(true, "Skip FOMC decision day", group=grpS, tooltip="'I waited until Thursday because of FOMC' ('Which FVG' video 01:17). The statement lands at 14:00 New York, the second window's open.")
+skipDates = input.string("", "Extra days to skip (YYYY-MM-DD, comma separated)", group=grpS, tooltip="Bank holidays, CPI/FOMC dates after 2026, or any day you want left dark. Example: 2026-11-26, 2026-12-24")
+
+grpA = "03. Accumulation box"
+accPre = input.int(9, "Pre-open bars that join the box when sideways", minval=0, maxval=30, group=grpA, tooltip="Checklist video 03:05: his 2 p.m. box starts about 9 bars before the open because price was already sideways. First video: price rallied into the open and his box starts after it. The pre-open bars join only when they pass the sideways test below.")
+preSide = input.float(0.4, "Sideways = net move at most this share of their range", minval=0.05, maxval=1.0, step=0.05, group=grpA, tooltip="Net move = |last pre-open close - first pre-open open|. 16 Oct 2024: 0.21, joins. 24 Dec 2024: 0.88 (rally into the open), stays out.")
+accPost = input.int(5, "Earliest manipulation: bars after the open", minval=1, maxval=60, group=grpA, tooltip="Before this bar a new 4H high or low only widens the box. From this bar on, the first new 4H low starts the long-side manipulation (new 4H high: short side) and the box freezes at the 4H candle's range so far. He says accumulation lasts 5 to 15 minutes ('Where will price manipulate?' 00:38); on 14 Sep 2026 it lasted 25.")
+
+grpM = "04. Manipulation"
+reqTap = input.string("15m, 5m or 1m", "Manipulation extreme must reach a live FVG of", options=["15m only", "15m or 5m", "15m, 5m or 1m", "Not required"], group=grpM, tooltip="Checklist step 3: nearest 15m gap, if no 15m then 5m, and the 1m only when neither is there. Grade A = 15m or 1H, B = 5m, C = 1m. '15m' in these options includes 1H gaps.")
+c1mWin = input.string("14:00 only", "1m-only tap allowed in", options=["14:00 only", "All windows"], group=grpM, tooltip="'When not to trade' 06:05: no 5m or 15m gap to tap is a red flag. Continuation video 01:38: at 2 p.m. a 1m gap is fine. His 16 Oct 2024 trade (14:00) tapped a 1m gap only.")
+maxDepth = input.int(300, "Too deep: ticks past the 4H open without a 15m/5m/1H gap (0 = off)", minval=0, group=grpM, tooltip="'When not to trade' 05:48-06:34 and 'Stop longing a falling manipulation' 09:50: 200-300 ticks past the 4H open with no gap to tap is not a Po3. His three trades went 85, 25 and 182 ticks past the open.")
+nearBlock = input.bool(true, "A 1m close through the nearest 15m/1H gap ends that side", group=grpM, tooltip="Newest video 08:26-08:45: if buyers stay in control they will not let price push past the nearest 15m pocket. First video 08:17: going lower flips the bias. The nearest gap beyond the box edge is picked when the box breaks.")
+bigOpenTicks = input.int(600, "Big open: 09:00 hour range (ticks) that holds 10:00 entries until 11:00 (0 = off)", minval=0, group=grpM, tooltip="'Where will price manipulate?' 00:38-03:49 and 'Align timeframes' 05:13: after a 600-700+ tick opening hour price accumulates for about an hour and manipulates into an hourly gap. 14 Sep 2026: 886 ticks, his entry 11:05.")
+minHtfGap = input.float(1.0, "Minimum 15m/5m/1H gap size (points)", minval=0, step=0.25, group=grpM)
+showHtf = input.bool(true, "Show 15m/5m/1H gap boxes", group=grpM)
+
+grpC = "05. Entry confirmation"
+revMode = input.string("iFVG or CISD", "Reversal signal", options=["iFVG", "CISD", "iFVG or CISD"], group=grpC, tooltip="iFVG: a 1m gap against the trade gets a body close through it.\nCISD: close beyond the open of the run of candles that made the extreme.")
+entryMode = input.string("Auto", "Enter on", options=["Auto", "Reversal + respected FVG", "Reversal only"], group=grpC, tooltip="'Auto' (default): if a gap is inverted within N bars of the extreme, enter right there (his 2024 trades: 'immediate reaction, immediate inverse'). Otherwise wait for the newest video's order-flow rule.\n'Reversal + respected FVG': after the reversal, a new 1m gap formed after the extreme must be tapped and closed back out of.\n'Reversal only': every first iFVG/CISD after an extreme.")
+immBars = input.int(2, "Auto: inversion counts as immediate within N bars of the extreme", minval=0, maxval=10, group=grpC, tooltip="16 Oct 2024 and 24 Dec 2024: inverted 1 bar after the low, he entered. 14 Sep 2026: the inversions came 3 bars after a low, he refused them and waited for the respected gap.")
+respDisp = input.bool(true, "Respected = close also beyond the previous bar", group=grpC, tooltip="The bar that leaves the gap must close above the previous bar's high (below its low for shorts). Without this, a close 0.1 point above the gap counted as respected on 14 Sep 2026, 17 minutes before his entry.")
+minFvg = input.float(0.5, "Minimum 1m FVG size (points)", minval=0, step=0.25, group=grpC)
+biasMode = input.string("Previous-day sweep, else previous 4H", "Bias filter", options=["Off", "Previous 4H candle", "Previous-day sweep, else previous 4H"], group=grpC, tooltip="Previous 4H candle: newest video 05:58, trade in the direction of the previous 4H candle; all three of his shown trades follow it.\nPrevious-day sweep: checklist video step 1. If today has traded below yesterday's low and price is back above it, only longs (mirror for yesterday's high). On 16 Oct 2024 this is what made him bullish while the previous 4H candle was bearish. When no sweep is in play the previous 4H candle decides.\nOff: both directions run and the first to complete takes the window.")
+
+grpR = "06. Risk, targets, stats"
+stopBufTicks = input.int(0, "Stop buffer beyond the extreme (ticks)", minval=0, group=grpR)
+maxRiskPts = input.float(0.0, "Skip setups with risk above (points, 0 = off)", minval=0, step=1, group=grpR)
+rearm = input.bool(true, "Re-arm the window after a stop-out", group=grpR, tooltip="If an entry is stopped before 1R and the window is still open, the same direction goes back to waiting for a new extreme, reversal and respected gap.")
+showHis = input.bool(true, "Show his target and the break-even mark", group=grpR, tooltip="Newest video 11:43: if the accumulation high is at least 1:1 away, target it; otherwise 1:1 to 1:2. First video 08:39: go break-even once price breaks the accumulation high.")
+showStats = input.bool(true, "Show stats table", group=grpR)
+
+grpX = "07. SMT"
+smtSym = input.symbol("CME_MINI:ES1!", "Compare with", group=grpX, tooltip="Named in 6 of his videos. Here: this chart broke its box edge while this symbol held its own box edge over the same bars, from the break to the entry. Shown as 'SMT' on the entry label; it blocks nothing. Replay: true on 16 Oct 2024 and 24 Dec 2024.")
+useSmt = input.bool(true, "Mark SMT on entries", group=grpX)
+
+grpV = "08. Visuals"
+showCandle = input.bool(true, "Show the live 4H candle on the right", group=grpV)
+colBull = input.color(color.new(#26a69a, 0), "Bull", group=grpV, inline="c")
+colBear = input.color(color.new(#ef5350, 0), "Bear", group=grpV, inline="c")
+colAcc = input.color(color.new(#4caf50, 80), "Accumulation", group=grpV, inline="c2")
+colHtf = input.color(color.new(#787b86, 78), "HTF gap", group=grpV, inline="c2")
+colHis = input.color(color.new(#ff9800, 0), "His target", group=grpV, inline="c2")
+
+if timeframe.in_seconds() > 300
+    runtime.error("MWM Po3: use a 1m to 5m chart. The model reads the 4H candle on the 1-minute chart.")
+
+// Trading day before each CPI release or FOMC decision, and FOMC decision days.
+// Sources fetched 2026-09-23: bls.gov/bls/news-release/cpi.htm, bls.gov/schedule/news_release/cpi.htm,
+// federalreserve.gov/monetarypolicy/fomccalendars.htm. Weekends skipped, market holidays not.
+string EVE_DAYS = "20240130,20240212,20240311,20240319,20240409,20240430,20240514,20240611,20240710,20240730,20240813,20240910,20240917,20241009,20241106,20241112,20241210,20241217,20250114,20250128,20250211,20250311,20250318,20250409,20250506,20250512,20250610,20250617,20250714,20250729,20250811,20250910,20250916,20251023,20251028,20251209,20251217,20260112,20260127,20260212,20260310,20260317,20260409,20260428,20260511,20260609,20260616,20260713,20260728,20260811,20260910,20260915,20261013,20261027,20261109,20261208,20261209"
+string FOMC_DAYS = "20240131,20240320,20240501,20240612,20240731,20240918,20241107,20241218,20250129,20250319,20250507,20250618,20250730,20250917,20251029,20251210,20260128,20260318,20260429,20260617,20260729,20260916,20261028,20261209"
+
+f_parseDays(string s) =>
+    array<int> out = array.new_int()
+    for p in str.split(s, ",")
+        float v = str.tonumber(str.replace_all(str.replace_all(p, " ", ""), "-", ""))
+        if not na(v)
+            out.push(int(v))
+    out
+
+var array<int> eveDays = f_parseDays(EVE_DAYS)
+var array<int> fomcDays = f_parseDays(FOMC_DAYS)
+var array<int> userDays = f_parseDays(skipDates)
+
+// ── Types ──────────────────────────────────────────────────────────
+type Gap
+    float top
+    float bot
+    int   dir
+    int   tf
+    int   born
+    box   bx
+
+type Track
+    int    dir = 0
+    int    state = 0
+    float  ext = na
+    int    extBar = na
+    int    breakBar = na
+    bool   revSeen = false
+    bool   revNow = false
+    bool   brokeNow = false
+    float  cisd = na
+    float  rgTop = na
+    float  rgBot = na
+    int    rgBar = na
+    int    grade = 0
+    box    mBox = na
+    box    rBox = na
+    box    aBox = na
+    float  accSide = na
+    float  accOpp = na
+    bool   oppTaken = false
+    float  nearTop = na
+    float  nearBot = na
+    bool   nearDead = false
+    float  esSide = na
+    bool   esBroke = false
+    bool   backOpen = false
+    string blks = ""
+
+// ── Higher-timeframe FVGs (15m, 5m, 1H), confirmed bars only ───────
+var array<Gap> htf = array.new<Gap>()
+var int last15 = 0
+var int last5 = 0
+var int last60 = 0
+
+f_gapPrev() =>
+    bool gb = low[1] > high[3]
+    bool gs = high[1] < low[3]
+    float t = gb ? low[1] : gs ? low[3] : na
+    float b = gb ? high[3] : gs ? high[1] : na
+    [gb, gs, t, b, time[1]]
+
+[g15b, g15s, g15t, g15m, g15time] = request.security(syminfo.tickerid, "15", f_gapPrev(), lookahead=barmerge.lookahead_on)
+[g5b, g5s, g5t, g5m, g5time] = request.security(syminfo.tickerid, "5", f_gapPrev(), lookahead=barmerge.lookahead_on)
+[g60b, g60s, g60t, g60m, g60time] = request.security(syminfo.tickerid, "60", f_gapPrev(), lookahead=barmerge.lookahead_on)
+
+f_addHtf(bool gb, bool gs, float t, float b, int tf) =>
+    if (gb or gs) and not na(t) and not na(b) and t - b >= minHtfGap
+        string nm = (tf == 60 ? "1H" : str.tostring(tf) + "m") + " FVG"
+        box bx = showHtf ? box.new(bar_index, t, bar_index + 1, b, border_color=color.new(colHtf, 60), bgcolor=colHtf, text=nm, text_size=size.tiny, text_color=color.new(chart.fg_color, 40), text_halign=text.align_right) : box(na)
+        htf.push(Gap.new(t, b, gb ? 1 : -1, tf, bar_index, bx))
+        if htf.size() > 100
+            Gap old = htf.shift()
+            box.delete(old.bx)
+
+if not na(g60time) and g60time != last60
+    last60 := g60time
+    f_addHtf(g60b, g60s, g60t, g60m, 60)
+if not na(g15time) and g15time != last15
+    last15 := g15time
+    f_addHtf(g15b, g15s, g15t, g15m, 15)
+if not na(g5time) and g5time != last5
+    last5 := g5time
+    f_addHtf(g5b, g5s, g5t, g5m, 5)
+
+// gap death: a chart-bar body close beyond the far edge
+if htf.size() > 0 and barstate.isconfirmed
+    for j = htf.size() - 1 to 0
+        Gap g = htf.get(j)
+        bool dead = g.dir == 1 ? close < g.bot : close > g.top
+        if dead
+            box.delete(g.bx)
+            htf.remove(j)
+        else if not na(g.bx)
+            box.set_right(g.bx, bar_index + 1)
+
+var array<Gap> bearG = array.new<Gap>()
+var array<Gap> bullG = array.new<Gap>()
+
+// grade of the live same-direction gap the extreme reached: 3 = 15m or 1H, 2 = 5m, 1 = chart (1m)
+f_tap(int d, float ext, int extBar) =>
+    int gr = 0
+    if htf.size() > 0 and not na(ext)
+        for i = 0 to htf.size() - 1
+            Gap z = htf.get(i)
+            if z.dir == d and z.born <= extBar
+                bool hit = d == 1 ? ext <= z.top : ext >= z.bot
+                if hit
+                    gr := math.max(gr, z.tf >= 15 ? 3 : 2)
+    array<Gap> own = d == 1 ? bullG : bearG
+    if gr == 0 and own.size() > 0 and not na(ext)
+        for i = 0 to own.size() - 1
+            Gap z = own.get(i)
+            if z.born <= extBar
+                bool hit = d == 1 ? ext <= z.top : ext >= z.bot
+                if hit
+                    gr := 1
+    gr
+
+// ── Chart-timeframe FVGs and candle runs ───────────────────────────
+bool bullF = low > high[2] and low - high[2] >= minFvg
+bool bearF = high < low[2] and low[2] - high >= minFvg
+
+if barstate.isconfirmed
+    if bearF
+        bearG.push(Gap.new(low[2], high, -1, 1, bar_index, box(na)))
+        if bearG.size() > 40
+            bearG.shift()
+    if bullF
+        bullG.push(Gap.new(low, high[2], 1, 1, bar_index, box(na)))
+        if bullG.size() > 40
+            bullG.shift()
+
+// open of the current/most recent run of down (up) candles, for CISD
+var float dnRunOpen = na
+var float upRunOpen = na
+if close < open and not (close[1] < open[1])
+    dnRunOpen := open
+if close > open and not (close[1] > open[1])
+    upRunOpen := open
+
+// SMT comparison symbol on the chart's own timeframe
+[esH, esL] = request.security(smtSym, timeframe.period, [high, low])
+
+// pre-open bars for the accumulation box (sideways test at the window open)
+int preN = math.max(accPre, 1)
+float preHi = ta.highest(high, preN)[1]
+float preLo = ta.lowest(low, preN)[1]
+float preOpen = open[preN]
+float esPreHi = ta.highest(esH, preN)[1]
+float esPreLo = ta.lowest(esL, preN)[1]
+
+// ── Window state ───────────────────────────────────────────────────
+int hh = hour(time, TZ)
+int ymd = year(time, TZ) * 10000 + month(time, TZ) * 100 + dayofmonth(time, TZ)
+f_sel(int h) =>
+    (h == 10 and w10) or (h == 14 and w14) or (h == 6 and w06) or (h == 2 and w02) or (h == 18 and w18) or (h == 22 and w22)
+bool winOpen = hh != hh[1] and f_sel(hh)
+
+// Bias inputs are built from the chart's own bars on the New York clock, not from
+// request.security: v4 asked TradingView for the 4H and D candles and the filter
+// did not hold on the chart (shorts on 16 Oct 2024 that the replay blocks).
+// 4H blocks start 02/06/10/14/18/22 New York; the trading day starts 18:00.
+bool newBlk = hh != hh[1] and (hh + 2) % 4 == 0
+var float blkOpen = na
+var int prev4 = 0
+if newBlk
+    prev4 := na(blkOpen) ? 0 : close[1] > blkOpen ? 1 : close[1] < blkOpen ? -1 : 0
+    blkOpen := open
+bool newSess = hh != hh[1] and hh == 18
+var float pdH = na
+var float pdL = na
+var float sessHi = na
+var float sessLo = na
+if newSess
+    pdH := sessHi
+    pdL := sessLo
+    sessHi := high
+    sessLo := low
+else
+    sessHi := math.max(nz(sessHi, high), high)
+    sessLo := math.min(nz(sessLo, low), low)
+
+// the 09:00 New York hourly candle, for the big-open rule
+var float h9 = na
+var float l9 = na
+if hh == 9 and hh != hh[1]
+    h9 := high
+    l9 := low
+else if hh == 9
+    h9 := math.max(h9, high)
+    l9 := math.min(l9, low)
+
+var Track bull = Track.new(1)
+var Track bear = Track.new(-1)
+var int   winTime = na
+var int   winBar = na
+var int   winHour = na
+var int   winBias = 0
+var float winOpenPx = na
+var float runHi = na
+var float runLo = na
+var float esRunHi = na
+var float esRunLo = na
+var int   boxStart = na
+var bool  bigDay = false
+var int   last10Day = 0
+var int   cTime = na
+var float wO = na
+var float wH = na
+var float wL = na
+
+// trade being tracked (one per window, a re-arm can add one after a stop-out)
+var int   trDir = 0
+var float trEntry = na
+var float trStop = na
+var float trT1 = na
+var float trT2 = na
+var bool  trHit1 = false
+var int   trBar = na
+var line  lnStop = na
+var line  ln1 = na
+var line  ln2 = na
+var line  lnHis = na
+// the winner's box and nearest gap, restored on a re-arm
+var float trAccSide = na
+var float trAccOpp = na
+var float trNearTop = na
+var float trNearBot = na
+var float trEsSide = na
+// his target: box edge when >= 1R away, else 1R; break-even once the box edge breaks
+var int   hsDir = 0
+var int   hsBar = na
+var float hsEntry = na
+var float hsT = na
+var float hsStop = na
+var float hsOpp = na
+var bool  hsBE = false
+// premise: did the stop stay the 4H candle's extreme until the candle closed?
+var int   pmDir = 0
+var float pmExt = na
+var bool  pmBroken = false
+var int   pmEnd = na
+
+// stats: index 0 = all, 1 = long, 2 = short
+var array<int> cN = array.new_int(3, 0)
+var array<int> c1 = array.new_int(3, 0)
+var array<int> c2 = array.new_int(3, 0)
+var array<int> cH = array.new_int(3, 0)
+var array<int> cS = array.new_int(3, 0)
+var array<int> cX = array.new_int(3, 0)
+var array<int> cP = array.new_int(3, 0)
+f_inc(array<int> a, int d) =>
+    a.set(0, a.get(0) + 1)
+    int k = d == 1 ? 1 : 2
+    a.set(k, a.get(k) + 1)
+
+f_reset(Track t, bool keepBoxes) =>
+    if not keepBoxes
+        box.delete(t.mBox)
+        box.delete(t.rBox)
+        box.delete(t.aBox)
+    t.state := 0
+    t.ext := na
+    t.extBar := na
+    t.breakBar := na
+    t.revSeen := false
+    t.revNow := false
+    t.brokeNow := false
+    t.cisd := na
+    t.rgTop := na
+    t.rgBot := na
+    t.rgBar := na
+    t.grade := 0
+    t.mBox := na
+    t.rBox := na
+    t.aBox := na
+    t.accSide := na
+    t.accOpp := na
+    t.oppTaken := false
+    t.nearTop := na
+    t.nearBot := na
+    t.nearDead := false
+    t.esSide := na
+    t.esBroke := false
+    t.backOpen := false
+    t.blks := ""
+
+// tap grade accepted? A 1m-only tap (grade C) counts only in the allowed windows.
+f_tapOK(int g) =>
+    bool c1m = g == 1 and (c1mWin == "All windows" or winHour == 14)
+    reqTap == "Not required" or (reqTap == "15m only" ? g == 3 : reqTap == "15m or 5m" ? g >= 2 : g >= 2 or c1m)
+
+// one bar of one direction's state machine; returns true on an entry bar
+f_step(Track t, bool canBreak, bool brk, bool newExt, float extVal, bool ifvgNow, float runOpen, bool fForm, float fTop, float fBot, bool allowed, float prevHi, float prevLo) =>
+    bool entry = false
+    t.revNow := false
+    t.brokeNow := false
+    if t.state == 1 and canBreak and brk and allowed
+        t.state := 2
+        t.ext := extVal
+        t.extBar := bar_index
+        t.breakBar := bar_index
+        t.cisd := nz(runOpen, open)
+        t.brokeNow := true
+        // the box freezes at the 4H range so far (runHi/runLo do not include this bar yet)
+        t.accSide := t.dir == 1 ? runLo : runHi
+        t.accOpp := t.dir == 1 ? runHi : runLo
+        t.esSide := t.dir == 1 ? esRunLo : esRunHi
+        t.aBox := box.new(boxStart, runHi, bar_index, runLo, border_color=na, bgcolor=colAcc)
+        t.mBox := box.new(bar_index, t.dir == 1 ? runLo : extVal, bar_index + 1, t.dir == 1 ? extVal : runHi, border_color=na, bgcolor=color.new(colBear, 78))
+        // the nearest live 15m/1H gap beyond the box edge, in the trade direction
+        if htf.size() > 0
+            for z in htf
+                if z.dir == t.dir and z.tf >= 15 and z.born <= bar_index
+                    bool beyond = t.dir == 1 ? z.bot < t.accSide : z.top > t.accSide
+                    bool nearer = na(t.nearTop) or (t.dir == 1 ? z.top > t.nearTop : z.bot < t.nearBot)
+                    if beyond and nearer
+                        t.nearTop := z.top
+                        t.nearBot := z.bot
+    else if t.state == 2 and newExt
+        t.ext := extVal
+        t.extBar := bar_index
+        t.cisd := nz(runOpen, open)
+        t.revSeen := false
+        t.backOpen := false
+        t.rgTop := na
+        t.rgBot := na
+        t.rgBar := na
+        box.delete(t.rBox)
+        t.rBox := na
+        // a re-armed side has no manipulation box (it stayed with the stopped entry)
+        if not na(t.mBox)
+            if t.dir == 1
+                box.set_bottom(t.mBox, extVal)
+            else
+                box.set_top(t.mBox, extVal)
+            box.set_right(t.mBox, bar_index + 1)
+    if t.state == 2
+        if t.dir == 1 ? high > t.accOpp : low < t.accOpp
+            t.oppTaken := true
+        if not na(t.nearTop) and (t.dir == 1 ? close < t.nearBot : close > t.nearTop)
+            t.nearDead := true
+        if not na(t.esSide) and (t.dir == 1 ? esL < t.esSide : esH > t.esSide)
+            t.esBroke := true
+        if t.dir == 1 ? close > winOpenPx : close < winOpenPx
+            t.backOpen := true
+        t.grade := f_tap(t.dir, t.ext, t.extBar)
+        bool cisdNow = t.dir == 1 ? close > t.cisd : close < t.cisd
+        bool rev = (revMode != "CISD" and ifvgNow) or (revMode != "iFVG" and cisdNow)
+        if not t.revSeen and rev
+            t.revSeen := true
+            t.revNow := true
+        // newest gap in the trade direction, formed after the extreme
+        if fForm and bar_index - 2 >= t.extBar
+            if not na(t.rgTop) and t.rgBar == bar_index - 1
+                // gaps on consecutive bars are one zone
+                t.rgTop := math.max(t.rgTop, fTop)
+                t.rgBot := math.min(t.rgBot, fBot)
+                box.set_top(t.rBox, t.rgTop)
+                box.set_bottom(t.rBox, t.rgBot)
+                box.set_right(t.rBox, bar_index + 1)
+            else
+                t.rgTop := fTop
+                t.rgBot := fBot
+                box.delete(t.rBox)
+                t.rBox := box.new(bar_index - 2, fTop, bar_index + 1, fBot, border_color=na, bgcolor=color.new(t.dir == 1 ? colBull : colBear, 75))
+            t.rgBar := bar_index
+        else if not na(t.rgTop)
+            bool disrespect = t.dir == 1 ? close < t.rgBot : close > t.rgTop
+            if disrespect
+                t.rgTop := na
+                t.rgBot := na
+                t.rgBar := na
+                box.delete(t.rBox)
+                t.rBox := na
+            else
+                box.set_right(t.rBox, bar_index + 1)
+        bool dispOK = not respDisp or (t.dir == 1 ? close > prevHi : close < prevLo)
+        bool respectNow = not na(t.rgTop) and bar_index > t.rgBar and dispOK and (t.dir == 1 ? low <= t.rgTop and close > t.rgTop : high >= t.rgBot and close < t.rgBot)
+        bool tapOK = f_tapOK(t.grade)
+        bool immNow = revMode != "CISD" and ifvgNow and bar_index - t.extBar <= immBars
+        entry := entryMode == "Reversal only" ? tapOK and t.revSeen and t.revNow : entryMode == "Auto" ? tapOK and (immNow or (t.revSeen and respectNow)) : tapOK and t.revSeen and respectNow
+    entry
+
+// his "don't take it" rules on an entry bar: 0 = none, else the first one that applies
+f_blockCode(Track t) =>
+    float depth = t.dir == 1 ? winOpenPx - t.ext : t.ext - winOpenPx
+    bigDay and winHour == 10 and hh < 11 ? 1 : maxDepth > 0 and depth > maxDepth * syminfo.mintick and t.grade < 2 ? 2 : t.oppTaken ? 3 : nearBlock and t.nearDead ? 4 : 0
+
+f_blockText(int code) =>
+    code == 1 ? "big opening hour: 10:00 entries wait for 11:00" : code == 2 ? "manipulation too deep past the 4H open without a 15m/5m/1H gap" : code == 3 ? "the other side of the box was taken before the entry" : "a 1m close went through the nearest 15m/1H gap"
+
+// grey x on a blocked entry, once per reason per side per window
+f_blockMark(Track t, int code) =>
+    string k = str.tostring(code)
+    if not str.contains(t.blks, k)
+        t.blks := t.blks + k
+        label.new(bar_index, t.dir == 1 ? low : high, "", style=label.style_xcross, color=color.new(chart.fg_color, 55), size=size.tiny, tooltip="Po3 " + (t.dir == 1 ? "long" : "short") + " blocked: " + f_blockText(code))
+
+// ── Per-bar logic (bar close only) ─────────────────────────────────
+bool entryLong = false
+bool entryShort = false
+bool manipStart = false
+bool revEvent = false
+bool tapEvent = false
+bool earlyL = false
+bool earlyS = false
+
+if barstate.isconfirmed
+    // a tracked trade: stop is checked first, so a bar that touches both counts as a stop
+    if trDir != 0 and bar_index > trBar
+        bool stopHit = trDir == 1 ? low <= trStop : high >= trStop
+        bool t1Hit = trDir == 1 ? high >= trT1 : low <= trT1
+        bool t2Hit = trDir == 1 ? high >= trT2 : low <= trT2
+        bool expired = time >= winTime + 240 * 60000 or winOpen
+        line.set_x2(lnStop, bar_index)
+        line.set_x2(ln1, bar_index)
+        line.set_x2(ln2, bar_index)
+        if not na(lnHis)
+            line.set_x2(lnHis, bar_index)
+        if stopHit
+            if not trHit1
+                f_inc(cS, trDir)
+                // early loser: the same direction goes back to hunting the real extreme
+                if rearm and not winOpen and time - winTime <= maxEntryMin * 60000
+                    Track ra = trDir == 1 ? bull : bear
+                    ra.state := 2
+                    ra.ext := trDir == 1 ? low : high
+                    ra.extBar := bar_index
+                    ra.breakBar := bar_index
+                    ra.cisd := nz(trDir == 1 ? dnRunOpen : upRunOpen, open)
+                    ra.accSide := trAccSide
+                    ra.accOpp := trAccOpp
+                    ra.nearTop := trNearTop
+                    ra.nearBot := trNearBot
+                    ra.esSide := trEsSide
+            trDir := 0
+        else
+            if t1Hit and not trHit1
+                trHit1 := true
+                f_inc(c1, trDir)
+            if t2Hit
+                f_inc(c2, trDir)
+                trDir := 0
+            else if expired
+                if not trHit1
+                    f_inc(cX, trDir)
+                trDir := 0
+
+    // his target, within the 4H candle; the stop moves to entry once the box edge breaks
+    if hsDir != 0 and bar_index > hsBar
+        bool hStop = hsDir == 1 ? low <= hsStop : high >= hsStop
+        bool hHit = hsDir == 1 ? high >= hsT : low <= hsT
+        if hStop
+            hsDir := 0
+        else if hHit
+            f_inc(cH, hsDir)
+            hsDir := 0
+        else if time >= pmEnd or winOpen
+            hsDir := 0
+        else if hsBE and (hsDir == 1 ? high > hsOpp : low < hsOpp)
+            hsStop := hsEntry
+            hsBE := false
+            if showHis
+                label.new(bar_index, hsDir == 1 ? high : low, "BE", style=hsDir == 1 ? label.style_label_down : label.style_label_up, color=color.new(chart.bg_color, 100), textcolor=colHis, size=size.tiny, tooltip="Box edge broken: his break-even point (first video 08:39)")
+
+    // premise: the stop stays the 4H candle's extreme until the candle closes
+    if pmDir != 0
+        if pmDir == 1 ? low < pmExt : high > pmExt
+            pmBroken := true
+        if time >= pmEnd or winOpen
+            if not pmBroken
+                f_inc(cP, pmDir)
+            pmDir := 0
+
+    // window end without a trade
+    if not na(winTime) and (bull.state != 0 or bear.state != 0) and trDir == 0 and (winOpen or time - winTime > maxEntryMin * 60000)
+        f_reset(bull, false)
+        f_reset(bear, false)
+
+    if winOpen and trDir == 0
+        f_reset(bull, false)
+        f_reset(bear, false)
+        cTime := time
+        string why = ""
+        if skipMon and dayofweek(time, TZ) == dayofweek.monday
+            why := "Monday"
+        else if skipEve and eveDays.includes(ymd)
+            why := "day before CPI/FOMC"
+        else if skipFomc and fomcDays.includes(ymd)
+            why := "FOMC day"
+        else if userDays.includes(ymd)
+            why := "your skip list"
+        else if only14 and hh == 14 and last10Day == ymd
+            why := "10:00 already traded"
+        line.new(bar_index, low, bar_index, high, extend=extend.both, color=color.new(chart.fg_color, why == "" ? 55 : 85), style=line.style_dashed)
+        if why != ""
+            winTime := na
+            label.new(bar_index, high, "skip: " + why, style=label.style_label_lower_left, color=color.new(chart.bg_color, 100), textcolor=color.new(chart.fg_color, 45), size=size.tiny)
+        else
+            winTime := time
+            winBar := bar_index
+            winHour := hh
+            winBias := prev4
+            winOpenPx := open
+            bool side = accPre > 0 and preHi > preLo and math.abs(close[1] - preOpen) <= preSide * (preHi - preLo)
+            runHi := side ? math.max(preHi, high) : high
+            runLo := side ? math.min(preLo, low) : low
+            esRunHi := side ? math.max(nz(esPreHi, esH), esH) : esH
+            esRunLo := side ? math.min(nz(esPreLo, esL), esL) : esL
+            boxStart := side ? bar_index - accPre : bar_index
+            bigDay := hh == 10 and bigOpenTicks > 0 and not na(h9) and h9 - l9 >= bigOpenTicks * syminfo.mintick
+            bull.state := 1
+            bear.state := 1
+
+    if bull.state != 0 or bear.state != 0
+        bool canBreak = bar_index - winBar >= accPost
+        // iFVG now: the newest live opposing 1m gap of this window gets a body close through it
+        bool ifvgUp = false
+        bool ifvgDn = false
+        if bearG.size() > 0
+            Gap nb = bearG.last()
+            ifvgUp := nb.born >= winBar and close > nb.top
+        if bullG.size() > 0
+            Gap ns = bullG.last()
+            ifvgDn := ns.born >= winBar and close < ns.bot
+        bool okL = biasMode == "Off" or winBias >= 0
+        bool okS = biasMode == "Off" or winBias <= 0
+        // a swept and reclaimed previous-day extreme outranks the previous 4H candle
+        bool swBull = sessLo < pdL and close > pdL
+        bool swBear = sessHi > pdH and close < pdH
+        if biasMode == "Previous-day sweep, else previous 4H" and swBull != swBear
+            okL := swBull
+            okS := swBear
+        int gradeBefore = math.max(bull.grade, bear.grade)
+        bool eL = f_step(bull, canBreak, low < runLo, low < bull.ext, low, ifvgUp, dnRunOpen, bullF, low, high[2], okL, high[1], low[1])
+        bool eS = f_step(bear, canBreak, high > runHi, high > bear.ext, high, ifvgDn, upRunOpen, bearF, low[2], high, okS, high[1], low[1])
+        // the box keeps growing on each side until that side breaks it
+        runHi := math.max(runHi, high)
+        runLo := math.min(runLo, low)
+        if not na(esH)
+            esRunHi := math.max(nz(esRunHi, esH), esH)
+        if not na(esL)
+            esRunLo := math.min(nz(esRunLo, esL), esL)
+        // the bias must also hold on the entry bar, not only when the range broke
+        eL := eL and okL
+        eS := eS and okS
+        int bL = eL ? f_blockCode(bull) : 0
+        int bS = eS ? f_blockCode(bear) : 0
+        if bL != 0
+            f_blockMark(bull, bL)
+            eL := false
+        if bS != 0
+            f_blockMark(bear, bS)
+            eS := false
+        manipStart := bull.brokeNow or bear.brokeNow
+        revEvent := bull.revNow or bear.revNow
+        earlyL := okL and bull.revNow and f_tapOK(bull.grade)
+        earlyS := okS and bear.revNow and f_tapOK(bear.grade)
+        tapEvent := math.max(bull.grade, bear.grade) > gradeBefore
+
+        Track w = eL ? bull : eS ? bear : na
+        if not na(w)
+            float stp = w.dir == 1 ? w.ext - stopBufTicks * syminfo.mintick : w.ext + stopBufTicks * syminfo.mintick
+            float risk = math.abs(close - stp)
+            if risk > 0 and (maxRiskPts == 0 or risk <= maxRiskPts)
+                trDir := w.dir
+                trEntry := close
+                trStop := stp
+                trT1 := close + w.dir * risk
+                trT2 := close + w.dir * 2 * risk
+                trHit1 := false
+                trBar := bar_index
+                trAccSide := w.accSide
+                trAccOpp := w.accOpp
+                trNearTop := w.nearTop
+                trNearBot := w.nearBot
+                trEsSide := w.esSide
+                if winHour == 10
+                    last10Day := ymd
+                entryLong := w.dir == 1
+                entryShort := w.dir == -1
+                f_inc(cN, w.dir)
+                float oppR = (w.dir == 1 ? w.accOpp - close : close - w.accOpp) / risk
+                bool smt = useSmt and not na(w.esSide) and not w.esBroke
+                string gr = w.grade == 3 ? "A" : w.grade == 2 ? "B" : w.grade == 1 ? "C" : "-"
+                string grp = gr + (w.backOpen ? "+" : "")
+                string tip = "Po3 " + (w.dir == 1 ? "long" : "short") + ", grade " + grp + " (" + (w.grade == 3 ? "15m or 1H gap" : w.grade == 2 ? "5m gap" : w.grade == 1 ? "1m gap" : "no gap") + ")\nEntry " + str.tostring(close, format.mintick) + "  Stop " + str.tostring(stp, format.mintick) + "  Risk " + str.tostring(risk, "#.##") + " pts" + "\nBox " + str.tostring(math.min(w.accSide, w.accOpp), format.mintick) + " - " + str.tostring(math.max(w.accSide, w.accOpp), format.mintick) + ": other edge " + str.tostring(oppR, "#.##") + "R away" + (oppR >= 1 ? " = his target" : ", his target = 1R, break-even once price takes that edge") + (w.backOpen ? "\n+ = closed back through the 4H open after the wick (his A+ extra)" : "") + (smt ? "\nSMT: " + smtSym + " held its box " + (w.dir == 1 ? "low" : "high") : "") + (bigDay and winHour == 10 ? "\nBig opening hour: this window waited for 11:00" : "")
+                label.new(bar_index, w.dir == 1 ? low : high, "Po3 " + grp + (smt ? " SMT" : ""), style=w.dir == 1 ? label.style_label_up : label.style_label_down, color=w.dir == 1 ? colBull : colBear, textcolor=color.white, size=size.small, tooltip=tip)
+                lnStop := line.new(bar_index, stp, bar_index + 1, stp, color=colBear, width=2)
+                ln1 := line.new(bar_index, trT1, bar_index + 1, trT1, color=colBull, style=line.style_dashed)
+                ln2 := line.new(bar_index, trT2, bar_index + 1, trT2, color=colBull)
+                lnHis := showHis and oppR >= 1 ? line.new(bar_index, w.accOpp, bar_index + 1, w.accOpp, color=colHis, style=line.style_dotted, width=2) : line(na)
+                hsDir := w.dir
+                hsBar := bar_index
+                hsEntry := close
+                hsT := oppR >= 1 ? w.accOpp : trT1
+                hsStop := stp
+                hsOpp := w.accOpp
+                hsBE := oppR < 1
+                // a re-arm entry follows a stop-out, so the earlier premise already failed
+                pmDir := w.dir
+                pmExt := w.ext
+                pmBroken := false
+                pmEnd := winTime + 240 * 60000
+                // the winner keeps its boxes; the other direction is cleared
+                f_reset(w.dir == 1 ? bear : bull, false)
+                f_reset(w, true)
+
+    // inverted / filled 1m gaps leave the books after they were evaluated
+    if bearG.size() > 0
+        for j = bearG.size() - 1 to 0
+            Gap gb1 = bearG.get(j)
+            if close > gb1.top
+                bearG.remove(j)
+    if bullG.size() > 0
+        for j = bullG.size() - 1 to 0
+            Gap gs1 = bullG.get(j)
+            if close < gs1.bot
+                bullG.remove(j)
+
+// ── Live 4H candle on the right ────────────────────────────────────
+bool inWin = not na(cTime) and time < cTime + 240 * 60000
+if winOpen
+    wO := open
+    wH := high
+    wL := low
+else if inWin
+    wH := math.max(wH, high)
+    wL := math.min(wL, low)
+
+var box cBody = na
+var line cWick = na
+if showCandle and barstate.islast and inWin and not na(wO)
+    box.delete(cBody)
+    line.delete(cWick)
+    color cc = close >= wO ? colBull : colBear
+    cWick := line.new(bar_index + 9, wH, bar_index + 9, wL, color=cc, width=2)
+    cBody := box.new(bar_index + 7, math.max(wO, close), bar_index + 11, math.min(wO, close), border_color=cc, bgcolor=color.new(cc, 30), text="4H", text_size=size.tiny, text_color=color.white)
+
+// early marker: reversal seen, entry still waits for the respected gap
+plotshape(earlyL and not entryLong, "Early long (reversal, his 2024 entry rule)", shape.triangleup, location.belowbar, color.new(colBull, 25), size=size.tiny)
+plotshape(earlyS and not entryShort, "Early short (reversal, his 2024 entry rule)", shape.triangledown, location.abovebar, color.new(colBear, 25), size=size.tiny)
+
+// bias and rule inputs, readable in the Data Window when a signal looks wrong
+plot(prev4, "Bias: previous 4H candle (+1 up, -1 down)", display=display.data_window)
+plot(pdH, "Bias: previous day high", display=display.data_window)
+plot(pdL, "Bias: previous day low", display=display.data_window)
+plot(sessLo < pdL and close > pdL ? 1 : sessHi > pdH and close < pdH ? -1 : 0, "Bias: previous-day sweep (+1 longs only, -1 shorts only)", display=display.data_window)
+plot(bull.state != 0 or bear.state != 0 ? runHi : na, "Box: 4H high so far", display=display.data_window)
+plot(bull.state != 0 or bear.state != 0 ? runLo : na, "Box: 4H low so far", display=display.data_window)
+plot(na(h9) ? na : (h9 - l9) / syminfo.mintick, "Big open: 09:00 hour range (ticks)", display=display.data_window)
+
+// ── Stats table ────────────────────────────────────────────────────
+f_pct(int a, int n) =>
+    n > 0 ? str.tostring(100.0 * a / n, "#") + "%" : "-"
+
+var table tb = table.new(position.bottom_right, 8, 5, bgcolor=color.new(chart.bg_color, 10), border_width=1, border_color=color.new(chart.fg_color, 80))
+if showStats and barstate.islast
+    array<string> hdr = array.from("Po3", "n", "1R first", "2R", "His TP", "Stop first", "Expired", "4H low held")
+    for c = 0 to 7
+        table.cell(tb, c, 0, hdr.get(c), text_color=chart.fg_color, text_size=size.small)
+    array<string> rows = array.from("All", "Long", "Short")
+    for r = 0 to 2
+        int n = cN.get(r)
+        table.cell(tb, 0, r + 1, rows.get(r), text_color=chart.fg_color, text_size=size.small)
+        table.cell(tb, 1, r + 1, str.tostring(n), text_color=chart.fg_color, text_size=size.small)
+        table.cell(tb, 2, r + 1, f_pct(c1.get(r), n), text_color=colBull, text_size=size.small)
+        table.cell(tb, 3, r + 1, f_pct(c2.get(r), n), text_color=colBull, text_size=size.small)
+        table.cell(tb, 4, r + 1, f_pct(cH.get(r), n), text_color=colHis, text_size=size.small)
+        table.cell(tb, 5, r + 1, f_pct(cS.get(r), n), text_color=colBear, text_size=size.small)
+        table.cell(tb, 6, r + 1, f_pct(cX.get(r), n), text_color=chart.fg_color, text_size=size.small)
+        table.cell(tb, 7, r + 1, f_pct(cP.get(r), n), text_color=chart.fg_color, text_size=size.small)
+    table.cell(tb, 0, 4, "Bias: " + biasMode + " | Enter on: " + entryMode + " | Tap: " + reqTap + " | 1m tap: " + c1mWin + "\nTouch-based, no fees or slippage. Not a backtest. His TP = box edge if at least 1R away, else 1R, break-even after the box edge.\n4H low held = the stop stayed the 4H candle's extreme until the candle closed (the model's premise).", text_color=color.new(chart.fg_color, 40), text_size=size.tiny)
+    table.merge_cells(tb, 0, 4, 7, 4)
+
+// ── Alerts ─────────────────────────────────────────────────────────
+alertcondition(manipStart, "Po3: manipulation started", "Po3 {{ticker}}: accumulation box broken, manipulation under way")
+alertcondition(tapEvent, "Po3: manipulation tapped a 15m/5m/1H FVG", "Po3 {{ticker}}: manipulation extreme is inside a higher-timeframe FVG")
+alertcondition(earlyL or earlyS, "Po3: early entry (reversal after a tapped manipulation)", "Po3 {{ticker}}: reversal after the manipulation, his 2024 entry. The respected-gap entry may follow.")
+alertcondition(entryLong, "Po3: LONG entry", "Po3 {{ticker}} LONG at {{close}}")
+alertcondition(entryShort, "Po3: SHORT entry", "Po3 {{ticker}} SHORT at {{close}}")

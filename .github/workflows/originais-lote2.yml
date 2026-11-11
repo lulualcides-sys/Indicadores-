@@ -1,0 +1,22 @@
+name: Originais lote 2 - hashes e licencas
+on:
+  push:
+    paths:
+      - '08_indicadores_originais/**'
+      - '01_catalogos/SEGUNDA_LEVA_27_ORIGINAIS_2026-11-11.csv'
+      - '.github/workflows/originais-lote2.yml'
+  pull_request:
+    paths:
+      - '08_indicadores_originais/**'
+      - '01_catalogos/SEGUNDA_LEVA_27_ORIGINAIS_2026-11-11.csv'
+      - '.github/workflows/originais-lote2.yml'
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify 37 upstream exact files and 27 script catalog
+        run: python -m unittest discover -s 08_indicadores_originais/testes -p test_lote2_*.py -v

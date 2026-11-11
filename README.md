@@ -12,6 +12,10 @@ Agora a biblioteca contém **arquivos reais de terceiros**, separados dos oito i
 
 Cinco arquivos Pine/TXT já fornecidos pelo usuário foram **copiados como texto** para [a biblioteca de fontes](08_indicadores_originais/03_autorizados_usuario/README.md), com licenças presentes e registro de origem. Não foi feito download desses anexos diretamente do Telegram nesta execução. A autorização de publicação foi **informada pelo usuário**; não foi confirmada independentemente. Arquivos de origem foram mantidos na Biblioteca. [Manifesto com hashes da cópia](08_indicadores_originais/03_autorizados_usuario/manifesto_lote1.json).
 
+## Segunda leva: 27 códigos originais adicionais
+
+Cinco autores com licença explícita (MIT ou MPL-2.0), total de 27 scripts e 37 arquivos originais conferidos por SHA Git. [Fontes e objetivos](08_indicadores_originais/SEGUNDA_LEVA_2026-11-11.md) · [catálogo](01_catalogos/SEGUNDA_LEVA_27_ORIGINAIS_2026-11-11.csv). Nenhum dos dez indicadores Nexus anteriores foi modificado.
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |

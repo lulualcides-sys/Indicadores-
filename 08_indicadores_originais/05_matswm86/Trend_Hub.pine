@@ -1,0 +1,163 @@
+// ─────────────────────────────────────────────────────────────────────────────
+//  TREND HUB  ·  Pine v6  ·  main-chart HUD
+//
+//  One glance: current 5m / 15m / 4H trend, direction, strength and
+//  overbought/oversold state, in a corner panel sized to be READ.
+//
+//  Trend engine per timeframe: L.A. Little's qualified-trend model ("Trend
+//  Qualification and Trading", corpus book 0397): 6-bar swing actualisation,
+//  a CLOSE through the last swing point flips the trend, a counter-trend
+//  break passes through sideways first; volume expansion at the break =
+//  CONFIRMED (±1.0), contraction = SUSPECT (±0.6); ±0.15 premium/discount
+//  modulation from the dealing range (iFVG model).
+//
+//  OB/OS: RSI(14) per timeframe, 70/30 lines.
+//
+//  Measured 2026-08-31 (Dukascopy NQ100 1y + 174-signal TV export): the 3/3
+//  alignment has NO edge as an entry trigger at 5-candle horizon and a weak,
+//  non-tradeable 1h reading. This panel is CONTEXT, not a signal generator.
+// ─────────────────────────────────────────────────────────────────────────────
+
+//@version=6
+indicator("Trend Hub", "TREND HUB", overlay = true)
+
+// ── inputs ───────────────────────────────────────────────────────────────────
+gTF = "Timeframes"
+tfFast = input.timeframe("5",   "Timeframe 1", group = gTF)
+tfMid  = input.timeframe("15",  "Timeframe 2", group = gTF)
+tfSlow = input.timeframe("240", "Timeframe 3", group = gTF)
+
+// human label: Pine stores intraday TFs in minutes ("240"); print "4H" instead
+tfLabel(string tf) =>
+    if str.contains(tf, "D") or str.contains(tf, "W") or str.contains(tf, "M") or str.contains(tf, "S")
+        tf
+    else
+        int m = math.round(str.tonumber(tf))
+        m % 60 == 0 and m >= 60 ? str.tostring(m / 60) + "H" : str.tostring(m) + "m"
+
+gEng = "Trend engine (L.A. Little qualified-trend)"
+spLen    = input.int(6, "Swing point actualisation bars", minval = 2, group = gEng)
+wSuspect = input.float(0.6, "Suspect trend weight", minval = 0.1, maxval = 1, step = 0.05, group = gEng)
+wRange   = input.float(0.15, "Dealing-range modulation", minval = 0, maxval = 0.5, step = 0.05, group = gEng)
+noRepaint = input.bool(true, "Wait for higher-TF bar close", group = gEng)
+
+gOsc = "Overbought / oversold"
+rsiLen = input.int(14, "RSI length", minval = 2, group = gOsc)
+obLvl  = input.float(70, "Overbought", minval = 50, maxval = 100, group = gOsc)
+osLvl  = input.float(30, "Oversold",   minval = 0,  maxval = 50,  group = gOsc)
+
+gVis = "Panel"
+hudPos = input.string("Top right", "Corner", options = ["Top right", "Top left", "Bottom right", "Bottom left", "Middle right", "Middle left"], group = gVis)
+hudSz  = input.string("Large", "Text size", options = ["Large", "Normal", "Small"], group = gVis)
+colUp  = input.color(#00E5C3, "Long",  group = gVis)
+colDn  = input.color(#FF4D6D, "Short", group = gVis)
+colAcc = input.color(#7DF3FF, "Accent", group = gVis)
+
+// ── trend engine (identical to MTF_Trend_Braid.pine) ─────────────────────────
+trendExpr() =>
+    float ph = ta.pivothigh(high, spLen, spLen)
+    float pl = ta.pivotlow(low,  spLen, spLen)
+    var float sphP = na
+    var float sphV = na
+    var bool  sphLive = false
+    var float splP = na
+    var float splV = na
+    var bool  splLive = false
+    var int   dir  = 0
+    var float qual = wSuspect
+    if not na(ph)
+        sphP := ph
+        sphV := volume[spLen]
+        sphLive := true
+    if not na(pl)
+        splP := pl
+        splV := volume[spLen]
+        splLive := true
+    if sphLive and close > sphP
+        dir := dir < 0 ? 0 : 1
+        if dir == 1
+            qual := volume > sphV ? 1.0 : wSuspect
+        sphLive := false
+    if splLive and close < splP
+        dir := dir > 0 ? 0 : -1
+        if dir == -1
+            qual := volume > splV ? 1.0 : wSuspect
+        splLive := false
+    float pos = not na(sphP) and not na(splP) and sphP != splP ?
+         math.max(-1.0, math.min(1.0, (close - (sphP + splP) / 2) / (math.abs(sphP - splP) / 2))) : 0.0
+    math.max(-1.0, math.min(1.0, (dir == 0 ? 0.0 : dir * qual) + wRange * pos))
+
+payload() =>
+    [trendExpr(), ta.rsi(close, rsiLen)]
+
+[rTF, rRF] = request.security(syminfo.tickerid, tfFast, payload(), barmerge.gaps_off, barmerge.lookahead_off)
+[rTM, rRM] = request.security(syminfo.tickerid, tfMid,  payload(), barmerge.gaps_off, barmerge.lookahead_off)
+[rTS, rRS] = request.security(syminfo.tickerid, tfSlow, payload(), barmerge.gaps_off, barmerge.lookahead_off)
+
+noRep(src) =>
+    noRepaint ? (barstate.isrealtime ? src[1] : src) : src
+
+tF = nz(noRep(rTF))
+qF = nz(noRep(rRF), 50)
+tM = nz(noRep(rTM))
+qM = nz(noRep(rRM), 50)
+tS = nz(noRep(rTS))
+qS = nz(noRep(rRS), 50)
+
+// ── panel plumbing ───────────────────────────────────────────────────────────
+posOpt = hudPos == "Top left" ? position.top_left : hudPos == "Bottom right" ? position.bottom_right : hudPos == "Bottom left" ? position.bottom_left : hudPos == "Middle right" ? position.middle_right : hudPos == "Middle left" ? position.middle_left : position.top_right
+szTxt  = hudSz == "Large" ? size.normal : hudSz == "Normal" ? size.small : size.tiny
+szHead = hudSz == "Large" ? size.large  : hudSz == "Normal" ? size.normal : size.small
+
+cBg    = color.new(#070B12, 8)      // near-black glass
+cGrid  = color.new(#101827, 0)
+cMute  = #5A6B7E
+cText  = #C9D6E3
+
+hue(v)  => v >= 0 ? colUp : colDn
+grad(v) => color.from_gradient(math.abs(v), 0.0, 1.0, cMute, hue(v))
+// ✓ marks a volume-CONFIRMED trend (score past 0.8); no mark = suspect trend
+word(v) => math.abs(v) < 0.18 ? "FLAT" : (v >= 0 ? "LONG ▲" : "SHORT ▼") + (math.abs(v) > 0.8 ? " ✓" : "")
+meter(v) =>
+    filled = math.max(0, math.min(8, math.round(math.abs(v) * 8)))
+    str.repeat("▰", filled) + str.repeat("▱", 8 - filled)
+
+// plain-language RSI readout; no 70/30 knowledge assumed
+oscTxt(r) => "RSI " + str.tostring(math.round(r)) + (r >= obLvl ? " · OVERBOUGHT" : r <= osLvl ? " · OVERSOLD" : " · neutral")
+oscCol(r) => r >= obLvl ? colDn : r <= osLvl ? colUp : cMute
+
+cntUp = (tF > 0.35 ? 1 : 0) + (tM > 0.35 ? 1 : 0) + (tS > 0.35 ? 1 : 0)
+cntDn = (tF < -0.35 ? 1 : 0) + (tM < -0.35 ? 1 : 0) + (tS < -0.35 ? 1 : 0)
+allAligned = cntUp == 3 or cntDn == 3
+dirCol = cntUp >= cntDn ? colUp : colDn
+
+var table hub = table.new(posOpt, 4, 6, bgcolor = cBg, frame_color = cGrid, frame_width = 2, border_color = color.new(#101827, 60), border_width = 1)
+
+// one HUD row (functions must live at top level in Pine, not inside `if`)
+row(int r, string tfName, float t, float q) =>
+    table.cell(hub, 0, r, tfName,    text_color = cText,   text_size = szTxt, text_halign = text.align_left)
+    table.cell(hub, 1, r, word(t),   text_color = grad(t), text_size = szTxt, text_halign = text.align_left)
+    table.cell(hub, 2, r, meter(t),  text_color = grad(t), text_size = szTxt)
+    table.cell(hub, 3, r, oscTxt(q), text_color = oscCol(q), text_size = szTxt, text_halign = text.align_right)
+
+if barstate.islast
+    table.clear(hub, 0, 0, 3, 5)
+    // header
+    table.cell(hub, 0, 0, "⬡ TREND HUB", text_color = colAcc, text_size = szHead, text_halign = text.align_left)
+    table.merge_cells(hub, 0, 0, 1, 0)
+    stateTxt = allAligned ? (cntUp == 3 ? "3/3 LONG" : "3/3 SHORT") : str.tostring(math.max(cntUp, cntDn)) + "/3"
+    table.cell(hub, 2, 0, stateTxt, text_color = allAligned ? dirCol : cMute, text_size = szHead, text_halign = text.align_right)
+    table.merge_cells(hub, 2, 0, 3, 0)
+    // column labels
+    table.cell(hub, 0, 1, "TF",         text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hub, 1, 1, "TREND",      text_color = cMute, text_size = size.tiny, text_halign = text.align_left)
+    table.cell(hub, 2, 1, "STRENGTH",   text_color = cMute, text_size = size.tiny)
+    table.cell(hub, 3, 1, "MOMENTUM",   text_color = cMute, text_size = size.tiny, text_halign = text.align_right)
+    // rows: slow → fast
+    row(2, tfLabel(tfSlow), tS, qS)
+    row(3, tfLabel(tfMid),  tM, qM)
+    row(4, tfLabel(tfFast), tF, qF)
+    // footer strip
+    ftxt = allAligned ? (cntUp == 3 ? "▲ ALL TIMEFRAMES LONG" : "▼ ALL TIMEFRAMES SHORT") : "MIXED · NO ALIGNMENT"
+    table.cell(hub, 0, 5, ftxt, text_color = allAligned ? dirCol : cMute, text_size = size.tiny, text_halign = text.align_center, bgcolor = allAligned ? color.new(dirCol, 86) : cBg)
+    table.merge_cells(hub, 0, 5, 3, 5)

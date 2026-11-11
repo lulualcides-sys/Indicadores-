@@ -1,0 +1,313 @@
+//@version=6
+// LIQUIDITY SWEEP VOLUME — sweeps quantified with REAL futures contract volume.
+// SWEEP DEFINITION (v2, deliberately strict):
+//   1. Reference = confirmed swing high/low (pivot) or prior-day high/low.
+//   2. EXCURSION: price trades beyond the level for up to N bars. NO bar may
+//      CLOSE beyond the level — a close beyond is a BREAK, not a sweep (who
+//      can close beyond was not fished, he broke out). Longer than N bars
+//      beyond = no sweep either (acceptance, not a grab).
+//   3. RECLAIM: the excursion ends when price stops trading beyond the level.
+//   4. CONFIRMATION: the next K bars must NOT take out the excursion extreme.
+//      If price retakes it WITHOUT closing beyond the level, that is not the
+//      end but a DEEPER sweep leg (double/triple sweep, labeled x2/x3);
+//      volume accumulates across legs. More than maxLegs legs = chop, the
+//      level is dropped. A close beyond the level is always a break.
+// MEASUREMENT: futures contracts traded during the excursion minutes beyond
+// the level (mask on THIS chart's intrabar prices — CFD level vs CFD price,
+// no basis mixing; volume/delta from the auto-detected futures contract).
+// The chart's broker tick volume is NEVER used. Delta side is estimated from
+// intrabar direction (no order book in Pine) and labeled as an estimate.
+// Confirmation is inherently K bars late — that is the repaint-free price of
+// rule 4, not a defect. Sibling tools: futures_volume_delta / vwap / twap /
+// volume profile / volume-confirmed order blocks.
+indicator("Liquidity Sweep Volume — CFD Charts", shorttitle = "Sweep Vol", overlay = true, max_labels_count = 100, max_lines_count = 100)
+
+volMode  = input.string("Futures symbol", "Volume source",
+     options = ["Chart (native)", "Futures symbol"], group = "Volume",
+     tooltip = "Futures = real exchange volume via request.security. Chart = this chart's own volume (only sensible on a native futures chart).")
+autoFut  = input.bool(true, "Auto-detect futures symbol", group = "Volume")
+futMan   = input.symbol("EUREX:FDAX1!", "…manual otherwise", group = "Volume")
+ltfMode  = input.string("Auto", "Intrabar resolution",
+     options = ["Auto", "1 minute", "5 minutes", "15 minutes"], group = "Volume")
+
+pivLen   = input.int(15, "Pivot length (left/right)", minval = 2, group = "Levels")
+usePD    = input.bool(true, "Also watch prior-day high/low", group = "Levels")
+maxLvls  = input.int(8, "Max active levels per side", minval = 1, maxval = 20, group = "Levels")
+
+excMaxN  = input.int(3, "Max excursion bars beyond the level (N)", minval = 1, maxval = 10, group = "Sweep definition",
+     tooltip = "Price may trade beyond the level for at most N bars. Longer = acceptance, not a sweep.")
+holdK    = input.int(2, "Confirmation: hold bars after reclaim (K)", minval = 0, maxval = 10, group = "Sweep definition",
+     tooltip = "The next K bars must not take out the excursion extreme. If they do WITHOUT closing beyond the level, a new sweep leg starts (x2, x3 ...). Labels/alerts fire K bars after the reclaim by design.")
+maxLegs  = input.int(3, "Max sweep legs (double/triple sweep)", minval = 1, maxval = 5, group = "Sweep definition",
+     tooltip = "Retaking the excursion extreme without closing beyond the level starts a deeper sweep leg (x2, x3 ...). More legs than this = chop, the level is dropped.")
+confMult = input.float(1.5, "Strong sweep: excursion vol >= x * bar average", step = 0.1, group = "Sweep definition")
+volMALen = input.int(50, "Volume MA length", minval = 1, group = "Sweep definition")
+
+scoreOn  = input.bool(true, "Track sweep outcomes (self-scoring)", group = "Self-scoring",
+     tooltip = "After each confirmed sweep the tool tracks the race: does price travel the reversal target (x ATR beyond the swept level) BEFORE the excursion extreme is retaken? The running hit rate is shown in the status label — measured on THIS chart and timeframe. A bar that hits both in one bar counts as a fail (pessimistic).")
+revMult  = input.float(1.0, "Reversal target (x ATR)", step = 0.25, minval = 0.25, group = "Self-scoring")
+atrLenS  = input.int(14, "ATR length", minval = 5, group = "Self-scoring")
+
+f_detectFut() =>
+    s = str.lower(syminfo.ticker) + " " + str.lower(syminfo.prefix) + " " + str.lower(syminfo.description)
+    isNQ  = str.contains(s, "nas") or str.contains(s, "ndx") or str.contains(s, "us100") or str.contains(s, "ustec") or str.contains(s, "tech100") or str.contains(s, "nq1") or str.contains(s, "nq!")
+    isYM  = str.contains(s, "dow") or str.contains(s, "us30") or str.contains(s, "dji") or str.contains(s, "ym1") or str.contains(s, "ym!") or str.contains(s, "wall street")
+    isDAX = str.contains(s, "dax") or str.contains(s, "ger40") or str.contains(s, "de40") or str.contains(s, "german")
+    isFTSE = str.contains(s, "ftse") or str.contains(s, "uk100") or str.contains(s, "ukx")
+    isES  = str.contains(s, "us500") or str.contains(s, "sp500") or str.contains(s, "spx") or str.contains(s, "s&p") or str.contains(s, "es1") or str.contains(s, "es!")
+    isDAX ? "EUREX:FDAX1!" : isFTSE ? "ICEEUR:Z1!" : isNQ ? "CME_MINI:NQ1!" :
+     isYM ? "CBOT_MINI:YM1!" : isES ? "CME_MINI:ES1!" : syminfo.tickerid
+
+futSym = autoFut ? f_detectFut() : futMan
+useFut = volMode == "Futures symbol"
+
+futVol = request.security(futSym, timeframe.period, volume, ignore_invalid_symbol = true)
+vol    = useFut ? futVol : volume
+volMA  = ta.sma(nz(vol), volMALen)
+
+autoLtf = timeframe.isintraday and timeframe.multiplier <= 5 ? "1" :
+     timeframe.isintraday and timeframe.multiplier <= 60 ? "5" : "15"
+ltf = ltfMode == "1 minute" ? "1" : ltfMode == "5 minutes" ? "5" :
+     ltfMode == "15 minutes" ? "15" : autoLtf
+
+// Intrabar data: excursion mask from THIS chart, volume from the future.
+[cLo, cHi] = request.security_lower_tf(syminfo.tickerid, ltf, [low, high])
+[fO, fC, fV] = request.security_lower_tf(useFut ? futSym : syminfo.tickerid,
+     ltf, [open, close, volume], ignore_invalid_symbol = true)
+
+// Beyond-level volume/delta of THIS bar. exact=false -> full-bar fallback.
+f_beyond(_level, _below) =>
+    float bv = 0.0
+    float bd = 0.0
+    bool ok = not na(cLo) and not na(fV) and cLo.size() > 0 and cLo.size() == fV.size()
+    if ok
+        for i = 0 to cLo.size() - 1
+            hit = _below ? cLo.get(i) < _level : cHi.get(i) > _level
+            if hit
+                v_i = nz(fV.get(i))
+                bv += v_i
+                bd += nz(fC.get(i)) >= nz(fO.get(i)) ? v_i : -v_i
+    if not ok
+        bv := nz(vol)
+        bd := 0.0
+    [bv, bd, ok]
+
+// --- level state (one object per watched swing / prior-day level) ---
+type Lvl
+    float price
+    int   birth      // bar index of the swing (line start)
+    bool  isLow      // true = low level (sweep below), false = high level
+    bool  isPD       // prior-day level (refreshed daily)
+    int   excBars    // bars spent beyond the level (0 = idle)
+    float excExt     // excursion extreme so far
+    float excVol     // accumulated futures volume beyond the level
+    float excDelta   // accumulated delta beyond the level
+    bool  excExact   // false if any bar used the full-bar fallback
+    int   wait       // remaining confirmation bars (-1 = not in confirmation)
+    bool  rest       // true once a bar after the reclaim stayed inside
+                     // (distinguishes excursion continuation from re-take)
+    int   legs       // sweep legs so far (2 = double sweep, 3 = triple ...)
+    label lbl        // provisional Sweep? label (two-stage display)
+
+var array<Lvl> lvls = array.new<Lvl>()
+
+// --- self-scoring: open outcome races + running counters ---
+type Trk
+    bool  isLow
+    float ext      // excursion extreme (retake = fail)
+    float tgt      // reversal target (hit first = win)
+    bool  strong
+var array<Trk> trks = array.new<Trk>()
+var int nTot  = 0
+var int nWin  = 0
+var int nSTot = 0
+var int nSWin = 0
+atrV = ta.atr(atrLenS)
+
+f_push(_price, _birth, _isLow, _isPD) =>
+    lvls.push(Lvl.new(_price, _birth, _isLow, _isPD, 0, _price, 0.0, 0.0, true, -1, false, 0, label(na)))
+    // cap per side (oldest non-PD first)
+    int nSide = 0
+    for i = 0 to lvls.size() - 1
+        if lvls.get(i).isLow == _isLow
+            nSide += 1
+    if nSide > maxLvls
+        for i = 0 to lvls.size() - 1
+            L = lvls.get(i)
+            if L.isLow == _isLow and not L.isPD
+                if not na(L.lbl)
+                    label.delete(L.lbl)
+                lvls.remove(i)
+                break
+
+f_fmt(_v) =>
+    math.abs(_v) >= 1e6 ? str.tostring(_v / 1e6, "#.#") + "M" :
+     math.abs(_v) >= 1e3 ? str.tostring(_v / 1e3, "#.#") + "K" :
+     str.tostring(_v, "#")
+
+f_src(_L) =>
+    (_L.isPD ? (_L.isLow ? "PDL" : "PDH") : (_L.isLow ? "low" : "high"))
+     + (_L.legs >= 2 ? " x" + str.tostring(_L.legs) : "")
+
+f_numtxt(_L) =>
+    rv = volMA > 0 ? _L.excVol / volMA : 0.0
+    "\nVol " + f_fmt(_L.excVol) + " (" + str.tostring(rv, "#.##") + "x)"
+     + (_L.excExact ? "\nDelta " + (_L.excDelta > 0 ? "+" : "") + f_fmt(_L.excDelta) : "")
+     + (_L.excExact and _L.excVol > 0 ?
+        "\nAbsorbed " + str.tostring(100.0 * math.abs(_L.excDelta) / _L.excVol, "#") + "% one-sided" : "")
+
+f_draw(_L) =>
+    // final stage: replace the provisional Sweep? label
+    if not na(_L.lbl)
+        label.delete(_L.lbl)
+    // reference line: from the swing that provided the liquidity to here
+    lc = _L.isLow ? color.new(color.teal, 25) : color.new(color.red, 25)
+    line.new(_L.birth, _L.price, bar_index, _L.price, color = lc,
+         width = 2, style = line.style_solid)
+    rvol = volMA > 0 ? _L.excVol / volMA : 0.0
+    strong = rvol >= confMult
+    txt = "Sweep " + f_src(_L) + (_L.excExact ? "" : " ~") + f_numtxt(_L)
+    label.new(bar_index, _L.isLow ? low : high, txt,
+         style = _L.isLow ? label.style_label_up : label.style_label_down,
+         color = strong ? color.new(_L.isLow ? color.teal : color.red, 15)
+              : color.new(color.gray, 45),
+         textcolor = color.white, size = size.small)
+    if scoreOn
+        trks.push(Trk.new(_L.isLow, _L.excExt,
+             _L.isLow ? _L.price + revMult * atrV : _L.price - revMult * atrV, strong))
+    strong
+
+// --- new reference levels ---
+pLo = ta.pivotlow(pivLen, pivLen)
+pHi = ta.pivothigh(pivLen, pivLen)
+pdh = request.security(syminfo.tickerid, "D", high[1], lookahead = barmerge.lookahead_on)
+pdl = request.security(syminfo.tickerid, "D", low[1],  lookahead = barmerge.lookahead_on)
+
+if barstate.isconfirmed
+    if not na(pLo)
+        f_push(pLo, bar_index - pivLen, true, false)
+    if not na(pHi)
+        f_push(pHi, bar_index - pivLen, false, false)
+    if usePD and timeframe.change("D")
+        // refresh prior-day levels (drop old PD entries first)
+        if lvls.size() > 0
+            for j = lvls.size() - 1 to 0
+                if lvls.get(j).isPD
+                    if not na(lvls.get(j).lbl)
+                        label.delete(lvls.get(j).lbl)
+                    lvls.remove(j)
+        if not na(pdl)
+            f_push(pdl, bar_index, true, true)
+        if not na(pdh)
+            f_push(pdh, bar_index, false, true)
+
+// --- self-scoring: resolve open races BEFORE new confirmations this bar ---
+// Pessimistic tie rule: if one bar hits target AND retakes the extreme, it
+// counts as a fail (consistent with conservative bar-logic backtesting).
+if scoreOn and barstate.isconfirmed and trks.size() > 0
+    for j = trks.size() - 1 to 0
+        T = trks.get(j)
+        lost = T.isLow ? low < T.ext : high > T.ext
+        won  = T.isLow ? high >= T.tgt : low <= T.tgt
+        if lost
+            nTot += 1
+            if T.strong
+                nSTot += 1
+            trks.remove(j)
+        else if won
+            nTot += 1
+            nWin += 1
+            if T.strong
+                nSTot += 1
+                nSWin += 1
+            trks.remove(j)
+if trks.size() > 50
+    trks.shift()
+
+// --- state machine per level ---
+bool confLow  = false
+bool confHigh = false
+if barstate.isconfirmed and lvls.size() > 0
+    for j = lvls.size() - 1 to 0
+        L = lvls.get(j)
+        beyondTrade = L.isLow ? low < L.price : high > L.price
+        closeBeyond = L.isLow ? close < L.price : close > L.price
+        if beyondTrade
+            // Re-take of the extreme AFTER a quiet reclaim bar: not the end —
+            // if the bar still closes back inside, a DEEPER sweep leg starts
+            // (double/triple sweep, x2/x3). Closing beyond stays a break.
+            newLeg = L.rest and (L.isLow ? low < L.excExt : high > L.excExt)
+            if closeBeyond
+                if not na(L.lbl)
+                    label.delete(L.lbl)
+                lvls.remove(j)          // BREAK: closed beyond -> not a sweep
+            else if newLeg and L.legs + 1 > maxLegs
+                if not na(L.lbl)
+                    label.delete(L.lbl)
+                lvls.remove(j)          // too many legs -> chop, no pattern
+            else if not newLeg and L.excBars + 1 > excMaxN
+                if not na(L.lbl)
+                    label.delete(L.lbl)
+                lvls.remove(j)          // too long beyond -> acceptance, no sweep
+            else
+                // excursion bar: leg start, continuation, re-entry after rest
+                // (below the old extreme), or a NEW deeper leg through it
+                [bv, bd, ok] = f_beyond(L.price, L.isLow)
+                L.legs     := L.legs == 0 ? 1 : newLeg ? L.legs + 1 : L.legs
+                L.excBars  := newLeg ? 1 : L.excBars + 1
+                L.excVol   := L.excVol + bv
+                L.excDelta := L.excDelta + bd
+                L.excExact := L.excExact and ok
+                L.excExt   := L.isLow ? math.min(L.excExt, low) : math.max(L.excExt, high)
+                L.rest     := false
+                L.wait     := holdK
+                if holdK > 0
+                    // two-stage display: provisional label right at the
+                    // reclaim bar (numbers are final; only the hold is open)
+                    if not na(L.lbl)
+                        label.delete(L.lbl)
+                    L.lbl := label.new(bar_index, L.isLow ? low : high,
+                         "Sweep? " + f_src(L) + (L.excExact ? "" : " ~") + f_numtxt(L),
+                         style = L.isLow ? label.style_label_up : label.style_label_down,
+                         color = color.new(color.gray, 70), textcolor = color.new(color.white, 20),
+                         size = size.small)
+                if holdK == 0
+                    // immediate mode: confirm on the reclaim bar itself
+                    s = f_draw(L)
+                    if L.isLow
+                        confLow := confLow or s
+                    else
+                        confHigh := confHigh or s
+                    lvls.remove(j)
+        else if L.wait >= 0
+            // quiet bar after the reclaim: count it toward confirmation
+            L.rest := true
+            if L.wait <= 1
+                s = f_draw(L)
+                if L.isLow
+                    confLow := confLow or s
+                else
+                    confHigh := confHigh or s
+                lvls.remove(j)
+            else
+                L.wait := L.wait - 1
+
+alertcondition(confLow,  "Volume-confirmed low sweep",
+     "Low swept and held: above-average real futures volume beyond the level")
+alertcondition(confHigh, "Volume-confirmed high sweep",
+     "High swept and held: above-average real futures volume beyond the level")
+
+if barstate.islast
+    txt = (useFut ? "Futures volume: " + futSym + (na(futVol) ? " (NO DATA)" : " ✓")
+                  : "Chart volume (native)")
+         + "\nSweep = <=" + str.tostring(excMaxN) + " bars beyond, no close beyond, held "
+         + str.tostring(holdK) + " bars"
+         + "\nExcursion volume from " + ltf + "-min bars; ~ = full-bar fallback"
+         + (scoreOn ? (nTot >= 10 ?
+             "\nReversed " + str.tostring(revMult, "#.##") + " ATR before retake: "
+             + str.tostring(100.0 * nWin / nTot, "#") + "% of " + str.tostring(nTot)
+             + (nSTot >= 5 ? " | strong: " + str.tostring(100.0 * nSWin / nSTot, "#")
+                + "% of " + str.tostring(nSTot) : "")
+             : "\nOutcome stats: collecting (n=" + str.tostring(nTot) + ")") : "")
+    label.new(bar_index, close, txt, style = label.style_label_left,
+         color = color.new(color.black, 20), textcolor = color.white, size = size.small)
