@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "collection": "Indicadores-",
+  "generated_on": "2026-11-11",
+  "base_commit": "ed47c7b11620bd71aaf946b616facaf6977199e7",
+  "includes_own_manifest": false,
+  "notes": "Instantaneo dos arquivos anteriores a adicao dos catalogos CSV; shas Git de arquivos, nao comprovacao de seguranca ou licencas.",
+  "files": [
+    {
+      "path": ".github/workflows/indicadores-validacao.yml",
+      "git_blob_sha": "07252754779f7a338e56eac1ab902dc3d1a5e6f8",
+      "size_bytes": 623
+    },
+    {
+      "path": ".gitignore",
+      "git_blob_sha": "7f3ed4957d3e326c8756993ab987963c50393524",
+      "size_bytes": 185
+    },
+    {
+      "path": "00_politicas/SEGURANCA_E_LICENCAS.md",
+      "git_blob_sha": "94b0985aa40f98bb2212d2efce2593b63be05e29",
+      "size_bytes": 1165
+    },
+    {
+      "path": "00_politicas/SEM_REPAINT.md",
+      "git_blob_sha": "94a5d3d286b337c52accc0a353f28e71822e6414",
+      "size_bytes": 2448
+    },
+    {
+      "path": "00_politicas/VALIDACAO.md",
+      "git_blob_sha": "38e859a7637bb18904ddfb559dbb5460041c713a",
+      "size_bytes": 1691
+    },
+    {
+      "path": "01_catalogos/ARQUIVOS_ORIGINAIS_REFERENCIADOS.md",
+      "git_blob_sha": "7eef257fdb367b60ff66aec1941d88a0104e6277",
+      "size_bytes": 1664
+    },
+    {
+      "path": "01_catalogos/INDICADORES_22_REFERENCIAS.md",
+      "git_blob_sha": "be81f8891eb97209801626a76d8391837d275abc",
+      "size_bytes": 3784
+    },
+    {
+      "path": "02_referencias_publicas/BULL_H1M1_VIDEO.md",
+      "git_blob_sha": "f8c60ee590bbabd1fc9d01da4e7596fd15e5137c",
+      "size_bytes": 1344
+    },
+    {
+      "path": "02_referencias_publicas/CANAIS_TELEGRAM.md",
+      "git_blob_sha": "838ea33f9632714630472a64556694e5df805b62",
+      "size_bytes": 2056
+    },
+    {
+      "path": "02_referencias_publicas/ORB_MQL5.md",
+      "git_blob_sha": "8ef46ec3d4bb039b13aac3a5d2e9dbb193b24fe7",
+      "size_bytes": 833
+    },
+    {
+      "path": "03_projetos_proprios/H1_Vector_Factor/README.md",
+      "git_blob_sha": "2f9496225f7ddbc767857bd09abfc22913c20b96",
+      "size_bytes": 2178
+    },
+    {
+      "path": "03_projetos_proprios/H1_Vector_Factor/TESTES_E_INSTALACAO.md",
+      "git_blob_sha": "9733551e3430313961cb1f9c6697f64b2ccc4374",
+      "size_bytes": 835
+    },
+    {
+      "path": "03_projetos_proprios/H1_Vector_Factor/testes/test_mql_static.py",
+      "git_blob_sha": "c4417ff145b1d7a33e5c737d37dff33edfcc3b30",
+      "size_bytes": 2956
+    },
+    {
+      "path": "03_projetos_proprios/H1_Vector_Factor/v1.10/H1_Vector_Factor_M1.mq5",
+      "git_blob_sha": "97217f8e6e7e697930a35a776fec2f03f39b2e68",
+      "size_bytes": 18239
+    },
+    {
+      "path": "03_projetos_proprios/H1_Vector_Factor/v1.20/H1_Vector_Factor_M1.mq5",
+      "git_blob_sha": "97971ea43839e28cf4ab7c4561f56596b2e47527",
+      "size_bytes": 20750
+    },
+    {
+      "path": "04_auditorias/AutoRangeDetector_analise.md",
+      "git_blob_sha": "e63b44214bec879f43b61f6ef1420a52642a54ce",
+      "size_bytes": 6592
+    },
+    {
+      "path": "04_auditorias/BCZONES_triagem.md",
+      "git_blob_sha": "e8264ad9eb1177f7d8d1bec460a0eb08f14c1fb3",
+      "size_bytes": 1892
+    },
+    {
+      "path": "04_auditorias/DRAWTOOL_triagem.md",
+      "git_blob_sha": "2a25da7f23e1996595981c2434cb81946a9eb67b",
+      "size_bytes": 1489
+    },
+    {
+      "path": "04_auditorias/DTC_v1.36_analise.md",
+      "git_blob_sha": "cbd578866c3ad084b70c09b55da3a35a9cae17aa",
+      "size_bytes": 2520
+    },
+    {
+      "path": "04_auditorias/MarketStructure_Dynamics_OrderBlocks_auditoria.md",
+      "git_blob_sha": "42acf8e9e6431f89befbd04d95db1ecb92fc2475",
+      "size_bytes": 7056
+    },
+    {
+      "path": "04_auditorias/Monster_Arrows_v2_SMC_auditoria.md",
+      "git_blob_sha": "472e5fc118b81d507064b966016935caa25ed04d",
+      "size_bytes": 5683
+    },
+    {
+      "path": "04_auditorias/QKE_MR_UltraFast_analise.md",
+      "git_blob_sha": "d7d1e297e40e9029de2327d537e0bc6b7b332d17",
+      "size_bytes": 2811
+    },
+    {
+      "path": "04_auditorias/TRENDWAVE_triagem.md",
+      "git_blob_sha": "be1a41e2f6f1911b3f11295258e4765d00e2bd8a",
+      "size_bytes": 1721
+    },
+    {
+      "path": "04_auditorias/WYCKOFF_triagem.md",
+      "git_blob_sha": "8541c0571729597844874836258805025bb7a1f8",
+      "size_bytes": 1578
+    },
+    {
+      "path": "05_extracoes_experimentais/AutoRangeDetector/range_features.py",
+      "git_blob_sha": "c449e153ecafcc2e37befeaf066c547caba2dc0a",
+      "size_bytes": 8999
+    },
+    {
+      "path": "05_extracoes_experimentais/AutoRangeDetector/test_range_features.py",
+      "git_blob_sha": "e5b2c5d1716cd68c3ed8c07991ecf5af29435dd9",
+      "size_bytes": 2281
+    },
+    {
+      "path": "05_extracoes_experimentais/BCZONES_candidatos.md",
+      "git_blob_sha": "fa6dd0b094d6f334e9c5f36c5e78c998198dc59b",
+      "size_bytes": 878
+    },
+    {
+      "path": "05_extracoes_experimentais/DRAWTOOL_candidatos.md",
+      "git_blob_sha": "bd0a1d129f0021e665883143d8cc266a7b3741d5",
+      "size_bytes": 378
+    },
+    {
+      "path": "05_extracoes_experimentais/DTC_v1.36_componentes.md",
+      "git_blob_sha": "a772c10d281f9b28117b34ee0ffac44feb31d4e2",
+      "size_bytes": 2065
+    },
+    {
+      "path": "05_extracoes_experimentais/MarketStructureOB/README.md",
+      "git_blob_sha": "6daa50e11f8242ca32b06ed794c9b7232324d1f9",
+      "size_bytes": 981
+    },
+    {
+      "path": "05_extracoes_experimentais/MarketStructureOB/manifest.json",
+      "git_blob_sha": "f463f94c41dc19f6208311897b94b32b61406b05",
+      "size_bytes": 500
+    },
+    {
+      "path": "05_extracoes_experimentais/MarketStructureOB/structure_features.py",
+      "git_blob_sha": "9cc2a1a9155659c0f1001841f44745e423082964",
+      "size_bytes": 7845
+    },
+    {
+      "path": "05_extracoes_experimentais/MarketStructureOB/test_structure_features.py",
+      "git_blob_sha": "5f2dcc4b228ad5242576b5a2394984d1e5d55c40",
+      "size_bytes": 3598
+    },
+    {
+      "path": "05_extracoes_experimentais/MonsterArrowsV2/README.md",
+      "git_blob_sha": "2ca315532ab31b4820ae685dd1b1b13aee708c1c",
+      "size_bytes": 1956
+    },
+    {
+      "path": "05_extracoes_experimentais/MonsterArrowsV2/manifest.json",
+      "git_blob_sha": "5ed58a94cdb6db2920cc5de9fb839aa0a6407e1a",
+      "size_bytes": 1480
+    },
+    {
+      "path": "05_extracoes_experimentais/MonsterArrowsV2/smc_core.py",
+      "git_blob_sha": "4ffe0f24fd86a7164374e7f7545c6942b6cc6b8e",
+      "size_bytes": 6657
+    },
+    {
+      "path": "05_extracoes_experimentais/MonsterArrowsV2/testes/test_smc_core.py",
+      "git_blob_sha": "1cd3f5fb3c7d7ba929785f5543ef04f8af7bb6c3",
+      "size_bytes": 2608
+    },
+    {
+      "path": "05_extracoes_experimentais/QKE_MR_UltraFast_componentes.md",
+      "git_blob_sha": "bcc2489f71c7e1247f77fe2c0e78e6da216fbe2b",
+      "size_bytes": 1319
+    },
+    {
+      "path": "05_extracoes_experimentais/TRENDWAVE_candidatos.md",
+      "git_blob_sha": "e8e34db6b0ef4e4aa055a299e829177cedbec44d",
+      "size_bytes": 532
+    },
+    {
+      "path": "05_extracoes_experimentais/WYCKOFF_candidatos.md",
+      "git_blob_sha": "6d17f8919e9a6e751a41d42abdbb30199573be35",
+      "size_bytes": 655
+    },
+    {
+      "path": "06_resultados/STATUS_VERIFICADO.md",
+      "git_blob_sha": "276b87fbdf06652ab25a3fad3562a789e1b36a1f",
+      "size_bytes": 1762
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGold/INDICATOR_FUSION_RESEARCH.md",
+      "git_blob_sha": "bce8f8d3672418e82988078d339318e3a08adbfb",
+      "size_bytes": 4682
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV2/RESULTADOS_INDICATOR_FUSION_V2_20261110.md",
+      "git_blob_sha": "1b0d2096f4b9862915805b710d82d25995671be4",
+      "size_bytes": 1710
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV3/INDICATOR_FUSION_V3_FREQUENCY.md",
+      "git_blob_sha": "c82d81111fa06b2de74b85f286dd1c5c84491608",
+      "size_bytes": 3000
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV4/INDICATOR_FUSION_V4_RESULTS_20261110.md",
+      "git_blob_sha": "b8e65f9784fa1744fede35061ffb0aadc628b820",
+      "size_bytes": 5055
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV5/INDICATOR_FUSION_V5_RESULTS_20261110.md",
+      "git_blob_sha": "43865a36e58d495b7307f27ed0bdb7519331f5d3",
+      "size_bytes": 4060
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV6/XAU_V6_BIDASK_RESULTADOS_20261110.md",
+      "git_blob_sha": "a152ecd0d9df4701231afbc4ec4a51a91d319f2f",
+      "size_bytes": 6099
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV7/XAU_V7_H4_SPOT_PROTOCOL.md",
+      "git_blob_sha": "7fee7bd7d866eb66ff10ab817bda03cf69cbffe1",
+      "size_bytes": 3763
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV8/XAU_V8_BOOTSTRAP_AUDIT.md",
+      "git_blob_sha": "1e45c0a66eff0f625b90d8a2d8c9046f8deed288",
+      "size_bytes": 1851
+    },
+    {
+      "path": "06_resultados/estudos_de_fusao/IndicatorFusionGoldV8/XAU_V8_RESULTADOS_12_MESES.md",
+      "git_blob_sha": "ca417254660331218e3f0bbcd06c042e83546982",
+      "size_bytes": 2679
+    },
+    {
+      "path": "07_arsenal/FERRAMENTAS_E_PADROES.md",
+      "git_blob_sha": "5673ca676d971d040ec676a66c4ffa6a494d6fd8",
+      "size_bytes": 1465
+    },
+    {
+      "path": "99_historico/BIBLIOTECA_README_2026-11-10.md",
+      "git_blob_sha": "0d511747cda2bb04909ea77b1a4f346922b23a5e",
+      "size_bytes": 3830
+    },
+    {
+      "path": "99_historico/catalogo_biblioteca_original.csv",
+      "git_blob_sha": "66f470fbfb6a585c7f7fd566503bf4757aac5cb3",
+      "size_bytes": 3015
+    },
+    {
+      "path": "99_historico/manifesto_integridade_biblioteca.json",
+      "git_blob_sha": "eb3036e46dd2c1a089043ca8033c593f34012cf3",
+      "size_bytes": 1818
+    },
+    {
+      "path": "README.md",
+      "git_blob_sha": "8a1a748ab5da5ca1a13810ffc975b442d7be5728",
+      "size_bytes": 2897
+    }
+  ]
+}
