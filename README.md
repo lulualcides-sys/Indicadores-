@@ -75,6 +75,16 @@ O acervo próprio passa de **6 para 8 indicadores**. Dois novos componentes **in
 
 **Política:** não copiar arquivos comerciais/pagos sem licença; não instalar EX4/EX5 desconhecidos; não afirmar no-repaint ou lucro. Nesta etapa entraram **links e descrições com fontes**, e nenhum código de terceiros foi redistribuído.
 
+## Candidatos premium e sem licença — pesquisa + implementação independente
+
+Os candidatos de canais públicos do Telegram também entram na pesquisa, mesmo com licença não esclarecida. **Não espelhamos código proprietário**, mas extraímos padrões observáveis para criar código autoral audível.
+
+Dois novos **experimentos** com setas confirmadas e buffers para MT5:
+- [Nexus Causal Kernel NR](03_projetos_proprios/Nexus_Causal_Kernel/README.md) — envelope gaussiano unilateral e retorno confirmado após extremo.
+- [Nexus Three-Candle NR](03_projetos_proprios/Nexus_Three_Candle/README.md) — exaustão e recuperação do meio do primeiro candle em sequência de três.
+
+[Ranking dos candidatos sem licença definida](09_pesquisa_telegram/CANDIDATOS_PREMIUM_ANALISE_TECNICA_2026-11-11.md). Nenhum é "melhor" por lucro ainda; esses dois são códigos novos a validar, e não cópias dos produtos comerciais.
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 
