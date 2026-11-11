@@ -20,6 +20,10 @@ Cinco autores com licença explícita (MIT ou MPL-2.0), total de 27 scripts e 37
 
 **21 códigos adicionais** arquivados com hash idêntico aos autores: seis indicadores **MT5/MQL5**, três fontes de **orderflow Pine** publicadas sob MIT pelo próprio autor e doze filtros/estatísticas matemáticos. [Lote 3 completo](08_indicadores_originais/LOTE3_PESQUISA_2026-11-11.md) · [Catálogo das 21 fontes](01_catalogos/LOTE3_21_FONTES_2026-11-11.csv) · [Triagem técnica](04_auditorias/LOTE3_TRIAGEM_2026-11-11.md).
 
+## Telegram — segunda pesquisa de arquivos-fonte
+
+23 novos candidatos encontrados em publicações públicas do Telegram, com priorização de H1 MTF, Turtle Soup, VSA e sessões. [Relatório](09_pesquisa_telegram/SEGUNDA_VARREDURA_2026-11-11.md) | [Catálogo](09_pesquisa_telegram/NOVOS_CANDIDATOS_2026-11-11.csv). São links para anexos anunciados; arquivos não foram baixados.
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |
