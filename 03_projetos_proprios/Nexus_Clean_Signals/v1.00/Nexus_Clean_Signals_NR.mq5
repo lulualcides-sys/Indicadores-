@@ -227,7 +227,7 @@ int OnCalculate(const int rates_total,const int prev_calculated,
      }
    BuyBuffer[0]=EMPTY_VALUE;
    SellBuffer[0]=EMPTY_VALUE;
-   const int oldest=MathMin(InpMaxHistoryBars,rates_total-need-2);
+   const int oldest=MathMin(InpMaxHistoryBars,rates_total-need-1);
    int lastSignalIndex=-1;
    int directionLast=0;
    double lastEntry=0.0,lastStop=0.0,lastScore=0.0;
