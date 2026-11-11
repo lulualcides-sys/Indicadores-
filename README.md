@@ -18,6 +18,17 @@ Repositório para **organizar, auditar e desenvolver indicadores de trading** a 
 | [07_arsenal](07_arsenal/) | Ferramentas e fluxo de trabalho |
 | [99_historico](99_historico/) | Catálogos históricos e índice da biblioteca preexistente |
 
+## Atualização de pesquisa e desenvolvimento — 11/11/2026
+
+| Indicador | Estado | Arquivo |
+|---|---|---|
+| **Nexus Liquidity Sweep NR v1.00** | Novo; setas após fechamento em varreduras de liquidez | [fonte e testes](03_projetos_proprios/Nexus_Liquidity_Sweep/README.md) |
+| **Nexus FVG Retest NR v1.00** | Novo; primeira visita a gaps de três velas confirmadas | [fonte e testes](03_projetos_proprios/Nexus_FVG_Retest/README.md) |
+| **H1 Vector Factor v1.30 NR** | Novo candidato; 2 filtros opcionais desligados por padrão | [notas e fonte](03_projetos_proprios/H1_Vector_Factor/v1.30/NOTAS.md) |
+| **H1 Vector Factor v1.20 NR** | Preservado, sem regressão deliberada | [versão anterior](03_projetos_proprios/H1_Vector_Factor/v1.20/H1_Vector_Factor_M1.mq5) |
+
+[Pesquisa de Telegram e fontes MQL5 adicionais](02_referencias_publicas/PESQUISA_INCREMENTAL_2026-11-11.md). **Testes Python/estáticos não substituem compilação no MetaEditor nem backtest com preço real.**
+
 ### Regra permanente: SEM REPAINT
 Sinais BUY/SELL **apenas após fechamento** do candle; sem leitura de dados futuros, sem mover/excluir seta já confirmada em ticks normais. Uma recarga ou correção de OHLC pelo broker exige auditoria especial. Ver [política](00_politicas/SEM_REPAINT.md).
 
