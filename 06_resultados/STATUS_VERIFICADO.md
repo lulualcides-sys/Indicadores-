@@ -4,7 +4,7 @@
 |---|---|---|
 | Nexus Session VWAP Reclaim NR v1.00 | Código próprio e testes sintéticos/estáticos adicionados; validação CI em branch | MetaEditor, ticks reais, comparação prefixos incremental e backtest líquido |
 | Nexus Structure Break NR v1.00 | Código próprio e testes de pivô causal adicionados; validação CI em branch | Verificar atrasos de confirmação no MT5, custos e backtest |
-| Nexus Clean Signals NR v1.00 | Implementação própria com AUTO/BREAKOUT/SWEEP, pesquisa e teste causal Python; CI a confirmar na PR | Compilação MetaEditor, execução demo e backtest real por modo, custos e fora da amostra |
+| Nexus Clean Signals NR v1.00 | Implementação própria com AUTO/BREAKOUT/SWEEP, pesquisa e 14 testes focados; seis suites de regressao (53 testes no total) aprovadas em GitHub Actions na branch | Compilação MetaEditor, execução demo e backtest real por modo, custos e fora da amostra |
 | H1 Vector Factor v1.20 | Código-fonte presente; suíte original Python executada localmente nesta migração: **15/15 aprovados** | MetaEditor, instalação, observação MT5 com ticks, backtest real |
 | H1 Vector Factor v1.10 | Fonte preservada como versão antiga | Não presumir sem repaint nem resultado financeiro |
 | Market Structure/OB | Código Python e testes próprios arquivados; auditoria anterior registrou 10 testes unitários | Backtest líquido e equivalência ao Pine original não demonstrados |
