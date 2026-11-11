@@ -1,0 +1,20 @@
+name: Validacao estatica — indicadores
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/**'
+      - '.github/workflows/indicadores-validacao.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/**'
+      - '.github/workflows/indicadores-validacao.yml'
+jobs:
+  testes-estaticos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Checar integridade e invariantes do indicador v1.20
+        run: python -m unittest discover -s 03_projetos_proprios/H1_Vector_Factor/testes -p 'test_*.py' -v
