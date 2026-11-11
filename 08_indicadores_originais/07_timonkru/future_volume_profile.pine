@@ -1,0 +1,172 @@
+//@version=6
+// FUTURES VOLUME PROFILE ON CFD CHARTS (auto symbol + session/week/month anchor)
+// Pulls REAL exchange volume from the matching futures contract (auto-detected
+// from the chart symbol) and distributes it over the PRICE zones of the CFD
+// chart -> a horizontal profile in CFD coordinates (the basis offset solves
+// itself: price = CFD, weight = futures volume).
+// Anchor: session (day) / week / month — the profile resets per period.
+// Incremental map accumulation (no lookback loop -> month anchor works too).
+// Output: histogram + POC (red) + VAH/VAL (blue). Thick = HVN, thin = LVN.
+indicator("Futures Volume Profile — CFD Charts", shorttitle = "Fut Vol Profile", overlay = true,
+     max_boxes_count = 250, max_lines_count = 15, max_labels_count = 12)
+
+anchorIn = input.string("Session (day)", "Anchor",
+     options = ["Session (day)", "Week", "Month"], group = "Profile")
+vaPct    = input.float(70, "Value area %", minval = 50, maxval = 90, step = 5, group = "Profile")
+binPts   = input.float(0.0, "Zone width (points, 0 = auto)", minval = 0, group = "Profile",
+     tooltip = "0 = automatic from ATR. Otherwise a fixed point width per zone.")
+profW    = input.int(30, "Profile width (bars)", minval = 5, group = "Display")
+gap      = input.int(2,  "Gap from price (bars)", minval = 0, group = "Display")
+posMode  = input.string("Session start", "Profile position",
+     options = ["Session start", "Right (at price)"], group = "Display",
+     tooltip = "Session start: profile sits at the period open (classic, grows live). Right: floats at the current price.")
+showHist = input.bool(true, "Show histogram", group = "Display")
+pocCol   = input.color(color.red, "POC", group = "Display")
+vaCol    = input.color(color.blue, "Value area", group = "Display")
+barCol   = input.color(color.teal, "Volume bars", group = "Display")
+
+volMode   = input.string("Futures symbol", "Volume source",
+     options = ["Chart (CFD)", "Futures symbol"], group = "Volume",
+     tooltip = "Futures = real exchange volume via request.security. Chart = this chart's own volume (use on a native futures chart).")
+autoFut   = input.bool(true, "Auto-detect futures symbol", group = "Volume")
+futManual = input.symbol("EUREX:FDAX1!", "…manual otherwise", group = "Volume")
+useChart  = volMode == "Chart (CFD)"
+
+// ---- auto-detection: chart symbol -> matching futures contract ----
+f_detectFut() =>
+    s = str.lower(syminfo.ticker) + " " + str.lower(syminfo.prefix) + " " + str.lower(syminfo.description)
+    isNQ  = str.contains(s, "nas") or str.contains(s, "ndx") or str.contains(s, "us100") or str.contains(s, "ustec") or str.contains(s, "tech100") or str.contains(s, "nq1") or str.contains(s, "nq!")
+    isYM  = str.contains(s, "dow") or str.contains(s, "us30") or str.contains(s, "dji") or str.contains(s, "ym1") or str.contains(s, "ym!") or str.contains(s, "wall street")
+    isDAX = str.contains(s, "dax") or str.contains(s, "ger40") or str.contains(s, "de40") or str.contains(s, "german")
+    isFTSE = str.contains(s, "ftse") or str.contains(s, "uk100") or str.contains(s, "ukx")
+    isES  = str.contains(s, "us500") or str.contains(s, "sp500") or str.contains(s, "spx") or str.contains(s, "s&p") or str.contains(s, "es1") or str.contains(s, "es!")
+    isDAX ? "EUREX:FDAX1!" : isFTSE ? "ICEEUR:Z1!" : isNQ ? "CME_MINI:NQ1!" :
+     isYM ? "CBOT_MINI:YM1!" : isES ? "CME_MINI:ES1!" : syminfo.tickerid
+
+futSym = autoFut ? f_detectFut() : futManual
+futVol = request.security(futSym, timeframe.period, volume, ignore_invalid_symbol = true)
+useFut = not useChart
+// NO silent fallback to chart volume: CFD tick volume and futures contracts
+// are different units — mixing them floods the overnight bars of a 24h CFD
+// and makes the profile diverge from the native futures chart. Bars without
+// futures data simply contribute nothing (the accumulation guard checks na/0).
+volBar = useFut ? futVol : volume
+
+// ---- anchor ----
+// Optional futures-trading-day anchor: CFD midnight vs. futures session start
+// would otherwise accumulate different windows on the two chart types.
+futDayAnk = input.bool(true, "Daily anchor = futures trading day", group = "Profile",
+     tooltip = "Resets the session at the FUTURES day change instead of the chart symbol's midnight -> identical anchoring on CFD and futures charts.")
+res  = anchorIn == "Week" ? "W" : anchorIn == "Month" ? "M" : "D"
+futDayT = request.security(futSym, "D", time, ignore_invalid_symbol = true)
+futDayChg = nz(ta.change(futDayT)) != 0
+newP = res == "D" and futDayAnk and useFut ? futDayChg : timeframe.change(res)
+
+var map<int, float> vmap = map.new<int, float>()
+var float binW = na
+var float sHi  = na
+var float sLo  = na
+var int   startBar = 0   // bar index where the current period started
+
+atr14 = ta.atr(14)   // global (Pine state) — must not live inside the if block
+
+if newP or barstate.isfirst
+    map.clear(vmap)
+    binW := binPts > 0 ? binPts : math.max(syminfo.mintick, nz(atr14) * 0.5)
+    sHi  := high
+    sLo  := low
+    startBar := bar_index
+
+// ---- accumulate (EVERY bar) ----
+if not na(binW) and binW > 0 and not na(volBar) and volBar > 0 and not na(high)
+    loK = int(math.floor(low / binW))
+    hiK = int(math.floor(high / binW))
+    n   = math.max(1, hiK - loK + 1)
+    share = volBar / n
+    for k = loK to hiK
+        prev = map.get(vmap, k)
+        map.put(vmap, k, (na(prev) ? 0.0 : prev) + share)
+    sHi := math.max(nz(sHi, high), high)
+    sLo := math.min(nz(sLo, low), low)
+
+// ---- draw (last bar only) ----
+var box[]   boxes = array.new_box()
+var line[]  lines = array.new_line()
+var label[] labs  = array.new_label()
+
+f_clear() =>
+    for b in boxes
+        box.delete(b)
+    array.clear(boxes)
+    for l in lines
+        line.delete(l)
+    array.clear(lines)
+    for lb in labs
+        label.delete(lb)
+    array.clear(labs)
+
+if barstate.islast and map.size(vmap) > 1
+    f_clear()
+    keys = map.keys(vmap)
+    array.sort(keys, order.ascending)
+    nK = array.size(keys)
+    vols = array.new_float(nK, 0.0)
+    total = 0.0
+    maxv = 0.0
+    pocI = 0
+    for j = 0 to nK - 1
+        v = map.get(vmap, array.get(keys, j))
+        vv = na(v) ? 0.0 : v
+        array.set(vols, j, vv)
+        total += vv
+        if vv > maxv
+            maxv := vv
+            pocI := j
+    // value area around the POC (over sorted zones)
+    vaVol = array.get(vols, pocI)
+    loI = pocI
+    hiI = pocI
+    target = total * vaPct / 100.0
+    while vaVol < target and (loI > 0 or hiI < nK - 1)
+        upV = hiI < nK - 1 ? array.get(vols, hiI + 1) : -1.0
+        dnV = loI > 0 ? array.get(vols, loI - 1) : -1.0
+        if upV >= dnV
+            hiI += 1
+            vaVol += math.max(upV, 0.0)
+        else
+            loI -= 1
+            vaVol += math.max(dnV, 0.0)
+    pocPrice = (array.get(keys, pocI) + 0.5) * binW
+    vah = (array.get(keys, hiI) + 1) * binW
+    val = array.get(keys, loI) * binW
+    // position: session start (profile sits at the period open) or right (at price)
+    posSession = posMode == "Session start"
+    baseX  = posSession ? startBar : bar_index + gap        // left edge of the histogram
+    rightX = posSession ? bar_index : baseX + profW         // right end of POC/VA lines + labels
+    // histogram (grows to the right from baseX)
+    if showHist
+        for j = 0 to nK - 1
+            v = array.get(vols, j)
+            w = maxv > 0 ? int(math.round(profW * v / maxv)) : 0   // v6: float->int explizit
+            if w > 0
+                k = array.get(keys, j)
+                y1 = k * binW
+                y2 = y1 + binW
+                inVa = j >= loI and j <= hiI
+                bx = box.new(baseX, y2, baseX + w, y1, border_color = na,
+                     bgcolor = color.new(barCol, inVa ? 45 : 72))
+                array.push(boxes, bx)
+    // POC + VA lines span the period: start -> now
+    array.push(lines, line.new(startBar, pocPrice, rightX, pocPrice, color = pocCol, width = 2))
+    array.push(lines, line.new(startBar, vah, rightX, vah, color = vaCol, style = line.style_dashed))
+    array.push(lines, line.new(startBar, val, rightX, val, color = vaCol, style = line.style_dashed))
+    array.push(labs, label.new(rightX, pocPrice, "POC " + str.tostring(pocPrice, format.mintick),
+         style = label.style_label_left, color = color.new(pocCol, 20), textcolor = color.white, size = size.small))
+    array.push(labs, label.new(rightX, vah, "VAH " + str.tostring(vah, format.mintick),
+         style = label.style_label_left, color = color.new(vaCol, 30), textcolor = color.white, size = size.small))
+    array.push(labs, label.new(rightX, val, "VAL " + str.tostring(val, format.mintick),
+         style = label.style_label_left, color = color.new(vaCol, 30), textcolor = color.white, size = size.small))
+    // confirm the volume source — at the period open, top
+    src = useChart ? "Chart volume" : (na(futVol) ? "⚠ " + futSym + " NO DATA" : "Futures " + futSym)
+    array.push(labs, label.new(startBar, sHi, src + " · " + anchorIn,
+         style = label.style_label_down, color = color.new(color.black, 25), textcolor = color.white, size = size.small))
