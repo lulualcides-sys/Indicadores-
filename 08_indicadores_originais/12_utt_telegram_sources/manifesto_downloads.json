@@ -1,0 +1,83 @@
+{
+  "channel": "https://t.me/s/ShepherdFxTradingTools",
+  "source": "https://ultimatetrading.tools/",
+  "method": "download ZIP linked from publisher, extract source/text only; never execute imported code",
+  "success": [
+    {
+      "name": "buyers_sellers_profile",
+      "url": "https://ultimatetrading.tools/product/buyers-sellers-profile-dynamic-sr-mt5/",
+      "download_url": "https://ultimatetrading.tools/wp-content/uploads/ut-src/buyers-sellers-profile-dynamic-sr-deriv-mt5.zip",
+      "license_claim": "CC BY-NC-SA 4.0",
+      "author_credit": "Zeiierman",
+      "zip_sha256": "c17db9c79c2f7b46b22d497f49fe6677c8b057621de6c9aff06e21b84c6d6067",
+      "files": [
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/buyers_sellers_profile/BuyersSellersProfile_DynamicSR_Deriv.mq5",
+          "sha256": "6e5f0c5f177baf768a485c2ccb9d5071be4d152f0607faeddfccef43a47e3343",
+          "bytes": 54464
+        },
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/buyers_sellers_profile/README_BuyersSellersProfile_DynamicSR_Deriv.txt",
+          "sha256": "12c5a4b55dd39462c7d537544be2a441c14b1d8fca867ab549df0d9ed69e7361",
+          "bytes": 8356
+        }
+      ]
+    },
+    {
+      "name": "liquidity_entry",
+      "url": "https://ultimatetrading.tools/product/liquidity-entry-signals/",
+      "download_url": "https://ultimatetrading.tools/wp-content/uploads/ut-src/liquidity-entry-signals.zip",
+      "license_claim": "CC BY-NC-SA 4.0",
+      "author_credit": "MarkitTick",
+      "zip_sha256": "a99af1162c93d9118250879b66c1f9643bc9d39db38fe3091979d7adc22f4ce3",
+      "files": [
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/liquidity_entry/Liquidity_Entry_Signals.mq5",
+          "sha256": "10121695a9549dd1752a6b374d0eed3cab8eebd44e1ae0e455c140fd6427e64b",
+          "bytes": 34780
+        }
+      ]
+    },
+    {
+      "name": "wick_sequence",
+      "url": "https://ultimatetrading.tools/product/wick-sequence-breakout-mt5/",
+      "download_url": "https://ultimatetrading.tools/wp-content/uploads/ut-src/wick-sequence-breakout-mt5.zip",
+      "license_claim": "MPL-2.0",
+      "author_credit": "Uncle_the_shooter",
+      "zip_sha256": "f974d81e3c32dc15e6fb779e1d5c11c41dd4b2eef006759da571a21536eae2a0",
+      "files": [
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/wick_sequence/UTT_WickSequenceBreakout.mq5",
+          "sha256": "c2b0b934fcdad0cfbb16c9bbc77e33475614e1af03815912cdd2cda2c3767244",
+          "bytes": 59704
+        },
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/wick_sequence/README_WickSequenceBreakout.txt",
+          "sha256": "46a5825f40b93b18d384fa0f2c5fb57a66695181e3a955b7dc31a28e2d1f861e",
+          "bytes": 10075
+        }
+      ]
+    },
+    {
+      "name": "adaptive_intelligence",
+      "url": "https://ultimatetrading.tools/product/adaptive-market-intelligence-mt5/",
+      "download_url": "https://ultimatetrading.tools/wp-content/uploads/ut-src/adaptive-market-intelligence-mt5.zip",
+      "license_claim": "MPL-2.0",
+      "author_credit": "InvestyourAsset",
+      "zip_sha256": "98fd27d27abd2727cbe142a1525bc164f0a894d2064b3f3a40f152fa9435a3ee",
+      "files": [
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/adaptive_intelligence/UTT_AdaptiveMarketIntelligence.mq5",
+          "sha256": "9f40db40bb539f6de611756145359e8a39b049d1f074bd8bbb79979fa64eed16",
+          "bytes": 103428
+        },
+        {
+          "path": "08_indicadores_originais/12_utt_telegram_sources/adaptive_intelligence/README_AdaptiveMarketIntelligence.txt",
+          "sha256": "3262719e4ea7d342438146b40a2d52d8f852359b4ea8eb5df486f7b59ca64036",
+          "bytes": 12664
+        }
+      ]
+    }
+  ],
+  "failures": []
+}
