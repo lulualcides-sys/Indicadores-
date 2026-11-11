@@ -108,6 +108,10 @@ class CleanSignalTests(unittest.TestCase):
         self.assertIn("ObjectsDeleteAll(0,g_prefix+\"PLAN_\"",SRC)
         self.assertIn("if(InpView!=NCS_LAST_PLAN || direction==0) return;",SRC)
 
+    def test_dashboard_distinguishes_new_and_stale_signals(self):
+        self.assertIn('lastSignalIndex==1 ? "CONFIRMED "',SRC)
+        self.assertIn('"LAST "+IntegerToString(lastSignalIndex)+" bars ago "',SRC)
+
     def test_default_is_clean_mode(self):
         self.assertIn("InpView          = NCS_CLEAN;",SRC)
         self.assertIn("InpShowDashboard          = true;",SRC)
