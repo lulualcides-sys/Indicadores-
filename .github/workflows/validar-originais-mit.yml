@@ -1,0 +1,21 @@
+name: Integridade e smoke tests dos indicadores originais MIT
+on:
+  push:
+    paths:
+      - '08_indicadores_originais/**'
+      - '.github/workflows/validar-originais-mit.yml'
+  pull_request:
+    paths:
+      - '08_indicadores_originais/**'
+      - '.github/workflows/validar-originais-mit.yml'
+jobs:
+  vendor-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check numpy==1.26.4 pandas==2.2.3
+      - name: Verify exact source hashes, license and Python indicator calculations
+        run: python -m unittest discover -s 08_indicadores_originais/testes -p 'test_*.py' -v
