@@ -1,0 +1,348 @@
+//@version=6
+// =============================================================================
+//  CVD — Cumulative Volume Delta with Divergence Detection
+//
+//  Author:     Rob Whitlow
+//  License:    MIT
+//
+//  Pane study: session-resetting cumulative delta line with split coloring and
+//  zero baseline. Detects classic price/CVD divergence (HH-LH, LL-HL) and
+//  absorption divergence (price one way, CVD the other) on a sliding window.
+//  Markers render in both the pane and the price chart via force_overlay.
+//
+//  Delta is inferred from LTF sub-bars (close direction × volume). Pine has no
+//  true bid/ask tick data; fidelity is ~70-85% on liquid futures.
+//
+//  Free and open source under the MIT license.
+// =============================================================================
+indicator("CVD", shorttitle="CVD", overlay=false,
+     max_lines_count=100, max_labels_count=100, max_boxes_count=20)
+
+// -----------------------------------------------------------------------------
+// Input groups
+// -----------------------------------------------------------------------------
+GRP_GEN = "General"
+GRP_LTF = "LTF Source"
+GRP_LIN = "CVD Line"
+GRP_DIV = "Divergence Detection"
+GRP_CLA = "Classic Divergence"
+GRP_ABS = "Absorption Divergence"
+GRP_MRK = "Markers"
+
+// -----------------------------------------------------------------------------
+// General — session reset
+// -----------------------------------------------------------------------------
+sessionMode = input.string("RTH", "Session Reset",
+     options=["RTH", "ETH", "Continuous", "Daily"], group=GRP_GEN,
+     tooltip="When the cumulative delta resets. RTH = 9:30am ET, ETH = 6:00pm ET prior day, Continuous = never resets, Daily = midnight exchange time.")
+rthSession = input.session("0930-1600", "RTH Session", group=GRP_GEN,
+     tooltip="Time range that counts as RTH. Only used when Session Reset = RTH.")
+ethSession = input.session("1800-1700", "ETH/Globex Session", group=GRP_GEN,
+     tooltip="Time range that counts as ETH. Only used when Session Reset = ETH.")
+
+// -----------------------------------------------------------------------------
+// LTF source
+// -----------------------------------------------------------------------------
+ltfRes = input.string("1S", "LTF Resolution",
+     options=["1S","5S","10S","15S","30S","1"], group=GRP_LTF,
+     tooltip="Lower timeframe used to approximate per-bar delta. 1S is most accurate but limited in historical reach.")
+
+// -----------------------------------------------------------------------------
+// CVD line style
+// -----------------------------------------------------------------------------
+lineWidth = input.int(2, "Line Width", minval=1, maxval=8, group=GRP_LIN)
+posColor  = input.color(color.new(#43a6c6, 0), "Positive Color (above zero)", group=GRP_LIN)
+negColor  = input.color(color.new(#f23645, 0), "Negative Color (below zero)", group=GRP_LIN)
+showZero  = input.bool(true, "Show Zero Baseline", group=GRP_LIN)
+zeroColor = input.color(color.new(#787878, 30), "Zero Baseline Color", group=GRP_LIN)
+
+// -----------------------------------------------------------------------------
+// Divergence detection
+// -----------------------------------------------------------------------------
+divPivotStrength = input.int(5, "Swing Pivot Strength (bars each side)",
+     minval=2, maxval=30, group=GRP_DIV,
+     tooltip="How many bars on each side a swing high/low must be the extreme of, to confirm as a pivot.")
+divMaxLookback = input.int(60, "Max Lookback for Prior Pivot (bars)",
+     minval=10, maxval=300, group=GRP_DIV,
+     tooltip="When testing a new pivot for divergence, search this many bars back for the prior same-type pivot.")
+
+// -----------------------------------------------------------------------------
+// Classic divergence
+// -----------------------------------------------------------------------------
+classicEnabled = input.bool(true, "Detect Classic Divergence", group=GRP_CLA)
+
+// -----------------------------------------------------------------------------
+// Absorption divergence
+// -----------------------------------------------------------------------------
+absorptionEnabled = input.bool(true, "Detect Absorption Divergence", group=GRP_ABS)
+absWindow         = input.int(5, "Window (consecutive bars)",
+     minval=3, maxval=30, group=GRP_ABS,
+     tooltip="Length of the sliding window over which to compare price drift vs CVD drift.")
+absMinPricePct    = input.float(30.0, "Min Price Move (% of ATR)",
+     minval=5.0, maxval=200.0, step=5.0, group=GRP_ABS,
+     tooltip="Price must move at least this percent of recent ATR over the window for an absorption signal to qualify.")
+absMinDeltaZ      = input.float(1.5, "Min Opposite Delta |Z|",
+     minval=0.5, maxval=5.0, step=0.1, group=GRP_ABS,
+     tooltip="The windowed CVD move must be opposite to price and beyond this Z-score vs the rolling distribution to qualify.")
+
+// -----------------------------------------------------------------------------
+// Markers
+// -----------------------------------------------------------------------------
+markCvdPane     = input.bool(true,  "Mark Divergences on CVD Pane",   group=GRP_MRK)
+markPricePane   = input.bool(true,  "Mark Divergences on Price Pane", group=GRP_MRK,
+     tooltip="Uses force_overlay so this pane study draws markers on the main price chart too.")
+bullDivColor    = input.color(color.new(#43e6c6, 0), "Classic Bullish Divergence", group=GRP_MRK)
+bearDivColor    = input.color(color.new(#ff5a5a, 0), "Classic Bearish Divergence", group=GRP_MRK)
+absBullColor    = input.color(color.new(#78c8ff, 0), "Absorption Bullish",         group=GRP_MRK)
+absBearColor    = input.color(color.new(#ffa050, 0), "Absorption Bearish",         group=GRP_MRK)
+
+// =============================================================================
+// 1) LTF data → per-bar delta approximation
+// =============================================================================
+// Pull LTF arrays and sum up signed contributions: ask (close>open) is positive,
+// bid (close<open) is negative, doji split as zero.
+ltfClose = request.security_lower_tf(syminfo.tickerid, ltfRes, close)
+ltfOpen  = request.security_lower_tf(syminfo.tickerid, ltfRes, open)
+ltfVol   = request.security_lower_tf(syminfo.tickerid, ltfRes, volume)
+
+barDelta = 0.0
+if not na(ltfClose) and array.size(ltfClose) > 0
+    n = array.size(ltfClose)
+    for i = 0 to n - 1
+        sc = array.get(ltfClose, i)
+        so = array.get(ltfOpen, i)
+        sv = array.get(ltfVol, i)
+        if not na(sv) and sv > 0 and not na(sc) and not na(so)
+            if sc > so
+                barDelta += sv
+            else if sc < so
+                barDelta -= sv
+
+// =============================================================================
+// 2) Session-resetting cumulative delta
+// =============================================================================
+// Build a boolean: "are we in a new session vs the prior bar?". On true, the
+// cumulative resets.
+inRth = not na(time(timeframe.period, rthSession))
+inEth = not na(time(timeframe.period, ethSession))
+
+newSession = false
+if sessionMode == "RTH"
+    // New session = transition from outside RTH to inside RTH
+    newSession := inRth and not inRth[1]
+else if sessionMode == "ETH"
+    newSession := inEth and not inEth[1]
+else if sessionMode == "Daily"
+    // New calendar day boundary
+    newSession := dayofmonth != dayofmonth[1]
+// else "Continuous" — newSession stays false
+
+var float cvd = 0.0
+if newSession
+    cvd := barDelta
+else
+    cvd := nz(cvd[1]) + barDelta
+
+// =============================================================================
+// 3) CVD line: split-color positive/negative
+// =============================================================================
+// Use plot with `color` parameter to switch per-bar. Pine doesn't draw a true
+// zero-crossing midpoint segment, but the visual result is nearly identical
+// at typical bar widths.
+cvdLineColor = cvd >= 0 ? posColor : negColor
+plot(cvd, "CVD", color=cvdLineColor, linewidth=lineWidth, style=plot.style_line)
+
+// Zero baseline
+hline(0, "Zero", color=showZero ? zeroColor : color.new(color.gray, 100),
+     linestyle=hline.style_solid, linewidth=1)
+
+// =============================================================================
+// 4) Pivot detection (lags by divPivotStrength bars)
+// =============================================================================
+ph = ta.pivothigh(high, divPivotStrength, divPivotStrength)
+pl = ta.pivotlow(low,   divPivotStrength, divPivotStrength)
+
+isPivotHigh = not na(ph)
+isPivotLow  = not na(pl)
+
+// =============================================================================
+// 5) Classic divergence detection
+//
+// On a confirmed pivot, scan back up to divMaxLookback bars for the most
+// recent same-type pivot and compare:
+//   - Pivot high: if current high > prior high AND current CVD < prior CVD → bearish
+//   - Pivot low:  if current low  < prior low  AND current CVD > prior CVD → bullish
+//
+// Note: pivots confirm divPivotStrength bars AFTER they occurred. So the
+// actual pivot bar is at `bar_index - divPivotStrength`. We compare prices
+// and CVD values at the pivot bars themselves.
+// =============================================================================
+// We maintain arrays of past pivot bar offsets + their price/cvd values so
+// we can look back from each new confirmation.
+var array<int>   pivHighOffsets = array.new<int>()
+var array<float> pivHighPrices  = array.new<float>()
+var array<float> pivHighCvds    = array.new<float>()
+var array<int>   pivLowOffsets  = array.new<int>()
+var array<float> pivLowPrices   = array.new<float>()
+var array<float> pivLowCvds     = array.new<float>()
+
+bullClassicSig = false
+bearClassicSig = false
+float bullClassicPrice = na
+float bearClassicPrice = na
+float bullClassicCvd   = na
+float bearClassicCvd   = na
+
+if classicEnabled and isPivotHigh
+    // Pivot bar's bar_index = bar_index - divPivotStrength
+    pivIdx   = bar_index - divPivotStrength
+    pivPrice = high[divPivotStrength]
+    pivCvd   = cvd[divPivotStrength]
+    // Find most recent prior pivot high within lookback
+    arrSz = array.size(pivHighOffsets)
+    if arrSz > 0
+        priorIdx     = array.get(pivHighOffsets, arrSz - 1)
+        priorPrice   = array.get(pivHighPrices,  arrSz - 1)
+        priorCvd     = array.get(pivHighCvds,    arrSz - 1)
+        if pivIdx - priorIdx <= divMaxLookback
+            if pivPrice > priorPrice and pivCvd < priorCvd
+                bearClassicSig := true
+                bearClassicPrice := pivPrice
+                bearClassicCvd   := pivCvd
+    array.push(pivHighOffsets, pivIdx)
+    array.push(pivHighPrices,  pivPrice)
+    array.push(pivHighCvds,    pivCvd)
+    // Keep array bounded
+    while array.size(pivHighOffsets) > 50
+        array.shift(pivHighOffsets)
+        array.shift(pivHighPrices)
+        array.shift(pivHighCvds)
+
+if classicEnabled and isPivotLow
+    pivIdx   = bar_index - divPivotStrength
+    pivPrice = low[divPivotStrength]
+    pivCvd   = cvd[divPivotStrength]
+    arrSz = array.size(pivLowOffsets)
+    if arrSz > 0
+        priorIdx     = array.get(pivLowOffsets, arrSz - 1)
+        priorPrice   = array.get(pivLowPrices,  arrSz - 1)
+        priorCvd     = array.get(pivLowCvds,    arrSz - 1)
+        if pivIdx - priorIdx <= divMaxLookback
+            if pivPrice < priorPrice and pivCvd > priorCvd
+                bullClassicSig := true
+                bullClassicPrice := pivPrice
+                bullClassicCvd   := pivCvd
+    array.push(pivLowOffsets, pivIdx)
+    array.push(pivLowPrices,  pivPrice)
+    array.push(pivLowCvds,    pivCvd)
+    while array.size(pivLowOffsets) > 50
+        array.shift(pivLowOffsets)
+        array.shift(pivLowPrices)
+        array.shift(pivLowCvds)
+
+// =============================================================================
+// 6) Absorption divergence detection
+//
+// For a sliding window of `absWindow` bars:
+//   - price drift  = close - close[absWindow]
+//   - cvd drift    = cvd   - cvd[absWindow]
+//
+// Qualifies as absorption if:
+//   - |price drift| >= absMinPricePct/100 * ATR(14)
+//   - |cvd drift Z-score over 100-bar rolling distribution| >= absMinDeltaZ
+//   - Signs are OPPOSITE (price up + cvd down → bearish; price down + cvd up → bullish)
+//
+// Cooldown: at least `absWindow` bars between consecutive emits.
+// =============================================================================
+priceDrift = close - close[absWindow]
+cvdDrift   = cvd - cvd[absWindow]
+
+atr14 = ta.atr(14)
+
+// Z-score of cvdDrift over 100-bar lookback
+cvdDriftMean = ta.sma(cvdDrift, 100)
+cvdDriftStd  = ta.stdev(cvdDrift, 100)
+cvdDriftZ    = cvdDriftStd > 0 ? (cvdDrift - cvdDriftMean) / cvdDriftStd : 0.0
+
+var int lastAbsEmitBar = -10000
+
+bullAbsSig = false
+bearAbsSig = false
+float bullAbsPrice = na
+float bearAbsPrice = na
+float bullAbsCvd   = na
+float bearAbsCvd   = na
+
+if absorptionEnabled and not na(atr14) and atr14 > 0 and not na(cvdDriftStd) and cvdDriftStd > 0
+    priceMovePctAtr = math.abs(priceDrift) / atr14 * 100.0
+    if priceMovePctAtr >= absMinPricePct and bar_index - lastAbsEmitBar >= absWindow
+        // Bearish absorption: price UP + cvd strongly NEGATIVE
+        if priceDrift > 0 and cvdDriftZ <= -absMinDeltaZ
+            bearAbsSig := true
+            bearAbsPrice := high
+            bearAbsCvd   := cvd
+            lastAbsEmitBar := bar_index
+        // Bullish absorption: price DOWN + cvd strongly POSITIVE
+        else if priceDrift < 0 and cvdDriftZ >= absMinDeltaZ
+            bullAbsSig := true
+            bullAbsPrice := low
+            bullAbsCvd   := cvd
+            lastAbsEmitBar := bar_index
+
+// =============================================================================
+// 7) Markers — CVD pane (plotshape uses series, not force_overlay)
+// =============================================================================
+// On the CVD pane, plot circles at the cvd value when each signal fires.
+plotshape(markCvdPane and bullClassicSig ? bullClassicCvd : na,
+     title="Classic Bullish (CVD)", style=shape.circle, location=location.absolute,
+     color=bullDivColor, size=size.small, offset=-divPivotStrength)
+plotshape(markCvdPane and bearClassicSig ? bearClassicCvd : na,
+     title="Classic Bearish (CVD)", style=shape.circle, location=location.absolute,
+     color=bearDivColor, size=size.small, offset=-divPivotStrength)
+plotshape(markCvdPane and bullAbsSig ? bullAbsCvd : na,
+     title="Absorption Bullish (CVD)", style=shape.circle, location=location.absolute,
+     color=absBullColor, size=size.small)
+plotshape(markCvdPane and bearAbsSig ? bearAbsCvd : na,
+     title="Absorption Bearish (CVD)", style=shape.circle, location=location.absolute,
+     color=absBearColor, size=size.small)
+
+// =============================================================================
+// 8) Markers — Price pane (force_overlay=true lets this pane study draw on
+//    the main chart). Triangles for classic, diamonds for absorption.
+// =============================================================================
+plotshape(markPricePane and bullClassicSig ? bullClassicPrice : na,
+     title="Classic Bullish (Price)", style=shape.triangleup,
+     location=location.absolute, color=bullDivColor, size=size.small,
+     offset=-divPivotStrength, force_overlay=true)
+plotshape(markPricePane and bearClassicSig ? bearClassicPrice : na,
+     title="Classic Bearish (Price)", style=shape.triangledown,
+     location=location.absolute, color=bearDivColor, size=size.small,
+     offset=-divPivotStrength, force_overlay=true)
+plotshape(markPricePane and bullAbsSig ? bullAbsPrice : na,
+     title="Absorption Bullish (Price)", style=shape.diamond,
+     location=location.absolute, color=absBullColor, size=size.small,
+     force_overlay=true)
+plotshape(markPricePane and bearAbsSig ? bearAbsPrice : na,
+     title="Absorption Bearish (Price)", style=shape.diamond,
+     location=location.absolute, color=absBearColor, size=size.small,
+     force_overlay=true)
+
+// =============================================================================
+// 9) Alerts
+// =============================================================================
+alertcondition(bullClassicSig, "Classic Bullish Divergence",
+     "Classic Bullish CVD Divergence — price LL + CVD HL")
+alertcondition(bearClassicSig, "Classic Bearish Divergence",
+     "Classic Bearish CVD Divergence — price HH + CVD LH")
+alertcondition(bullAbsSig, "Absorption Bullish",
+     "Absorption Bullish — price down, CVD strongly up (buyers absorbing)")
+alertcondition(bearAbsSig, "Absorption Bearish",
+     "Absorption Bearish — price up, CVD strongly down (sellers absorbing)")
+
+// =============================================================================
+// 10) Data Window
+// =============================================================================
+plot(barDelta, "Bar Delta",     display=display.data_window)
+plot(cvd,      "CVD",           display=display.data_window)
+plot(cvdDriftZ,"CVD Drift Z",   display=display.data_window)
+plot(atr14,    "ATR(14)",       display=display.data_window)

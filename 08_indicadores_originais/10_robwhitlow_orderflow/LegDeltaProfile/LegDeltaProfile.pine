@@ -1,0 +1,352 @@
+//@version=6
+// =============================================================================
+//  Leg Delta Profile — Active-Leg Net Delta Histogram
+//
+//  Author:     Rob Whitlow
+//  License:    MIT
+//
+//  Builds a horizontal NET DELTA profile of the current active swing leg
+//  (last confirmed pivot → current bar) and pins it near the right edge of
+//  the chart with bars extending leftward. Bar length scales to |delta|;
+//  neutral rows are omitted so only real directional pressure shows up.
+//
+//  Delta is approximated from LTF sub-bars (default 1-second), classified
+//  ask/bid by close-vs-open and distributed across the sub-bar's range.
+//
+//  Free and open source under the MIT license.
+// =============================================================================
+indicator("Leg Delta Profile", shorttitle="LegDelta", overlay=true,
+     max_boxes_count=500, max_lines_count=20, max_labels_count=20)
+
+// -----------------------------------------------------------------------------
+// Input groups
+// -----------------------------------------------------------------------------
+GRP_DET = "Leg Detection"
+GRP_RES = "Profile Resolution"
+GRP_REN = "Render"
+GRP_COL = "Colors"
+GRP_MRK = "Markers"
+
+// -----------------------------------------------------------------------------
+// Detection
+// -----------------------------------------------------------------------------
+pivotStrength = input.int(5, "Swing Pivot Strength (bars each side)",
+     minval=2, maxval=30, group=GRP_DET,
+     tooltip="Number of bars on each side that must be lower (for a high pivot) / higher (for a low pivot) to confirm a swing.")
+
+// -----------------------------------------------------------------------------
+// Resolution
+// -----------------------------------------------------------------------------
+ltfRes = input.string("1S", "LTF Resolution",
+     options=["1S","5S","10S","15S","30S","1"], group=GRP_RES,
+     tooltip="Lower-timeframe resolution used to sample bid/ask distribution within each bar. 1S is most accurate but limited in historical reach.")
+rowTicks = input.int(2, "Row Height (ticks per bin)",
+     minval=1, maxval=50, group=GRP_RES,
+     tooltip="How many ticks each profile row represents. Smaller = finer profile but more rows.")
+maxRowsPerLeg = input.int(150, "Max Rows",
+     minval=10, maxval=400, group=GRP_RES,
+     tooltip="Hard cap on profile rows. Pine has a 500-box-total limit; this protects against very wide legs.")
+
+// -----------------------------------------------------------------------------
+// Render
+// -----------------------------------------------------------------------------
+anchorOffset = input.int(10, "Right Anchor Offset (bars past last bar)",
+     minval=0, maxval=100, group=GRP_REN,
+     tooltip="How many bars past the last bar the right edge of the profile sits. Set this to roughly match how much empty space you keep to the right of price.")
+maxBarsWidth = input.int(40, "Max Histogram Width (bars)",
+     minval=5, maxval=300, group=GRP_REN,
+     tooltip="The widest profile row extends this many bars to the LEFT of the right anchor. All other rows scale relative to this maximum.")
+rowOpacity = input.int(20, "Row Opacity (0=solid, 100=invisible)",
+     minval=0, maxval=100, group=GRP_REN)
+
+// -----------------------------------------------------------------------------
+// Colors
+// -----------------------------------------------------------------------------
+bullColor    = input.color(color.new(#43a6c6, 0), "Bull Row (ask > bid)",   group=GRP_COL)
+bearColor    = input.color(color.new(#dc3c3c, 0), "Bear Row (bid > ask)",   group=GRP_COL)
+neutralPct   = input.float(0.1, "Neutral Band (|delta| / volume <=)",
+     minval=0.0, maxval=0.5, step=0.01, group=GRP_COL,
+     tooltip="Rows whose |delta| is at most this fraction of total volume are dropped (not drawn).")
+
+// -----------------------------------------------------------------------------
+// Markers
+// -----------------------------------------------------------------------------
+showPoc       = input.bool(true, "Show POC (highest volume row)", group=GRP_MRK)
+showDeltaPoc  = input.bool(true, "Show dPOC (highest |delta| row)", group=GRP_MRK)
+pocColor      = input.color(color.new(#ffd400, 0), "POC Color",  group=GRP_MRK)
+deltaPocColor = input.color(color.new(#ffffff, 0), "dPOC Color", group=GRP_MRK)
+
+// =============================================================================
+// 1) Tick + bucket helpers
+// =============================================================================
+tickSize = syminfo.mintick
+rowSize  = tickSize * rowTicks
+
+priceToBucket(float price) =>
+    math.floor(price / rowSize)
+
+bucketToPrice(int bucket) =>
+    bucket * rowSize
+
+// =============================================================================
+// 2) LTF data pulls
+// =============================================================================
+ltfClose = request.security_lower_tf(syminfo.tickerid, ltfRes, close)
+ltfOpen  = request.security_lower_tf(syminfo.tickerid, ltfRes, open)
+ltfHigh  = request.security_lower_tf(syminfo.tickerid, ltfRes, high)
+ltfLow   = request.security_lower_tf(syminfo.tickerid, ltfRes, low)
+ltfVol   = request.security_lower_tf(syminfo.tickerid, ltfRes, volume)
+
+// =============================================================================
+// 3) Persistent leg-accumulation maps
+//
+// `askMap`/`bidMap` accumulate forward across bars. To avoid double-counting
+// on the live bar (where ticks re-execute the script), we only add a bar's
+// contribution ONCE when it confirms (`barstate.isconfirmed`), gated by
+// `lastProcessedBarIndex`. The live bar's intrabar contribution is added at
+// render time into a transient working copy.
+// =============================================================================
+var map<int, float> askMap = map.new<int, float>()
+var map<int, float> bidMap = map.new<int, float>()
+var int lastProcessedBarIndex = -1
+var int lastPivType = 0
+
+clearLeg() =>
+    map.clear(askMap)
+    map.clear(bidMap)
+
+// =============================================================================
+// 4) Contribution helpers
+// =============================================================================
+// Distribute (vol, side) uniformly across price buckets in [pLow, pHigh].
+//   side = +1 -> ask, -1 -> bid, 0 -> split 50/50.
+addContribution(map<int, float> aMap, map<int, float> bMap,
+     float pLow, float pHigh, float vol, int side) =>
+    if not na(pLow) and not na(pHigh) and not na(vol) and vol > 0
+        bLow  = priceToBucket(pLow)
+        bHigh = priceToBucket(pHigh)
+        bMin = math.min(bLow, bHigh)
+        bMax = math.max(bLow, bHigh)
+        nBuckets = bMax - bMin + 1
+        if nBuckets > 0 and nBuckets < 1000
+            perBucket = vol / nBuckets
+            for b = bMin to bMax
+                askDelta = side ==  1 ? perBucket : side == 0 ? perBucket * 0.5 : 0.0
+                bidDelta = side == -1 ? perBucket : side == 0 ? perBucket * 0.5 : 0.0
+                if askDelta > 0
+                    prev = map.get(aMap, b)
+                    map.put(aMap, b, na(prev) ? askDelta : prev + askDelta)
+                if bidDelta > 0
+                    prev = map.get(bMap, b)
+                    map.put(bMap, b, na(prev) ? bidDelta : prev + bidDelta)
+
+// Walk this bar's LTF sub-bars and add them to the provided maps.
+addCurrentBarLtf(map<int, float> aOut, map<int, float> bOut) =>
+    if not na(ltfClose) and array.size(ltfClose) > 0
+        n = array.size(ltfClose)
+        for i = 0 to n - 1
+            sc = array.get(ltfClose, i)
+            so = array.get(ltfOpen,  i)
+            sh = array.get(ltfHigh,  i)
+            sl = array.get(ltfLow,   i)
+            sv = array.get(ltfVol,   i)
+            if not na(sv) and sv > 0
+                side = 0
+                if not na(sc) and not na(so)
+                    side := sc > so ?  1 : sc < so ? -1 : 0
+                pLow  = not na(sl) ? sl : not na(sc) ? sc : float(na)
+                pHigh = not na(sh) ? sh : not na(sc) ? sc : float(na)
+                addContribution(aOut, bOut, pLow, pHigh, sv, side)
+
+// =============================================================================
+// 5) Leg detection
+// =============================================================================
+ph = ta.pivothigh(high, pivotStrength, pivotStrength)
+pl = ta.pivotlow(low,   pivotStrength, pivotStrength)
+
+currentPivType = not na(ph) ? 1 : not na(pl) ? -1 : 0
+
+// =============================================================================
+// 6) Drawing artifact registry
+// =============================================================================
+var array<box>   profileBoxes  = array.new<box>()
+var array<line>  profileLines  = array.new<line>()
+var array<label> profileLabels = array.new<label>()
+
+clearProfile() =>
+    if array.size(profileBoxes) > 0
+        for b in profileBoxes
+            box.delete(b)
+        array.clear(profileBoxes)
+    if array.size(profileLines) > 0
+        for l in profileLines
+            line.delete(l)
+        array.clear(profileLines)
+    if array.size(profileLabels) > 0
+        for lb in profileLabels
+            label.delete(lb)
+        array.clear(profileLabels)
+
+// =============================================================================
+// 7) Render the active profile
+// =============================================================================
+renderActiveProfile() =>
+    clearProfile()
+
+    // Build transient working maps from persistent leg state.
+    workAsk = map.new<int, float>()
+    workBid = map.new<int, float>()
+    leftKeys = map.keys(askMap)
+    for k in leftKeys
+        v = map.get(askMap, k)
+        if not na(v)
+            map.put(workAsk, k, v)
+    rightKeys = map.keys(bidMap)
+    for k in rightKeys
+        v = map.get(bidMap, k)
+        if not na(v)
+            map.put(workBid, k, v)
+
+    // Add live (uncommitted) bar's intrabar contribution.
+    if barstate.islast and not barstate.isconfirmed and lastPivType != 0
+        addCurrentBarLtf(workAsk, workBid)
+
+    keys = map.keys(workAsk)
+    bidKeys = map.keys(workBid)
+    if array.size(bidKeys) > 0
+        for k in bidKeys
+            if not array.includes(keys, k)
+                array.push(keys, k)
+    nRows = array.size(keys)
+    if nRows > 0
+        // Cap rows: keep buckets with highest total volume.
+        if nRows > maxRowsPerLeg
+            tots = array.new<float>()
+            for k in keys
+                a = map.get(workAsk, k)
+                b = map.get(workBid, k)
+                t = (na(a) ? 0.0 : a) + (na(b) ? 0.0 : b)
+                array.push(tots, t)
+            kept = array.new<int>()
+            keptCount = 0
+            while keptCount < maxRowsPerLeg and array.size(tots) > 0
+                bestIdx = 0
+                bestVal = array.get(tots, 0)
+                tsz = array.size(tots)
+                if tsz > 1
+                    for j = 1 to tsz - 1
+                        v = array.get(tots, j)
+                        if v > bestVal
+                            bestVal := v
+                            bestIdx := j
+                array.push(kept, array.get(keys, bestIdx))
+                array.remove(keys, bestIdx)
+                array.remove(tots, bestIdx)
+                keptCount += 1
+            array.clear(keys)
+            for kk in kept
+                array.push(keys, kk)
+            nRows := array.size(keys)
+
+        // Compute max |delta| (for scaling) and POC / dPOC.
+        maxAbsDelta = 0.0
+        int pocBucket = na
+        pocVol    = 0.0
+        int dpocBucket = na
+        dpocAbs    = 0.0
+        for k in keys
+            a = map.get(workAsk, k)
+            b = map.get(workBid, k)
+            aF = na(a) ? 0.0 : a
+            bF = na(b) ? 0.0 : b
+            t  = aF + bF
+            d  = aF - bF
+            ad = math.abs(d)
+            if ad > maxAbsDelta
+                maxAbsDelta := ad
+            if t > pocVol
+                pocVol := t
+                pocBucket := k
+            if ad > dpocAbs
+                dpocAbs := ad
+                dpocBucket := k
+
+        if maxAbsDelta > 0
+            rightAnchor = last_bar_index + anchorOffset
+
+            // Render rows — bar length scales with |delta|, neutral rows omitted.
+            for k in keys
+                a = map.get(workAsk, k)
+                b = map.get(workBid, k)
+                aF = na(a) ? 0.0 : a
+                bF = na(b) ? 0.0 : b
+                tot = aF + bF
+                delt = aF - bF
+                absDelt = math.abs(delt)
+                pct = tot > 0 ? absDelt / tot : 0.0
+                if pct <= neutralPct
+                    continue
+                lenBars = math.max(1, math.round(maxBarsWidth * (absDelt / maxAbsDelta)))
+                rowLow  = bucketToPrice(k)
+                rowHigh = rowLow + rowSize
+                rowColor = delt > 0 ? bullColor : bearColor
+                rowColorWithAlpha = color.new(rowColor, rowOpacity)
+                bx = box.new(left=rightAnchor - lenBars, top=rowHigh,
+                     right=rightAnchor, bottom=rowLow,
+                     border_color=rowColorWithAlpha,
+                     bgcolor=rowColorWithAlpha,
+                     xloc=xloc.bar_index, extend=extend.none)
+                array.push(profileBoxes, bx)
+
+            // POC marker.
+            if showPoc and not na(pocBucket)
+                pocMid = bucketToPrice(pocBucket) + rowSize / 2.0
+                ln = line.new(x1=rightAnchor - maxBarsWidth, y1=pocMid,
+                     x2=rightAnchor, y2=pocMid,
+                     xloc=xloc.bar_index, color=pocColor, width=2)
+                array.push(profileLines, ln)
+                lb = label.new(x=rightAnchor, y=pocMid,
+                     text="  POC", xloc=xloc.bar_index, yloc=yloc.price,
+                     style=label.style_none, textcolor=pocColor, size=size.small)
+                array.push(profileLabels, lb)
+
+            // dPOC marker.
+            if showDeltaPoc and not na(dpocBucket)
+                dpocMid = bucketToPrice(dpocBucket) + rowSize / 2.0
+                ln2 = line.new(x1=rightAnchor - maxBarsWidth, y1=dpocMid,
+                     x2=rightAnchor, y2=dpocMid,
+                     xloc=xloc.bar_index, color=deltaPocColor, width=1,
+                     style=line.style_dashed)
+                array.push(profileLines, ln2)
+                lb2 = label.new(x=rightAnchor, y=dpocMid,
+                     text="  dPOC", xloc=xloc.bar_index, yloc=yloc.price,
+                     style=label.style_none, textcolor=deltaPocColor, size=size.small)
+                array.push(profileLabels, lb2)
+
+// =============================================================================
+// 8) Main per-bar logic
+// =============================================================================
+// On each CONFIRMED bar, commit the bar's LTF aggregate to the persistent
+// leg maps — but only once per bar (the live bar re-executes on every tick).
+if barstate.isconfirmed and bar_index != lastProcessedBarIndex
+    if lastPivType != 0
+        addCurrentBarLtf(askMap, bidMap)
+    lastProcessedBarIndex := bar_index
+
+// When a pivot confirms, the active leg ends. Clear and start fresh.
+// Note: pivot bar was `pivotStrength` bars ago, so the new profile starts
+// `pivotStrength` bars late — that's an unavoidable Pine limitation.
+if currentPivType != 0
+    clearLeg()
+    lastPivType := currentPivType
+
+// Redraw on the last bar (live updates as it forms).
+if barstate.islast
+    renderActiveProfile()
+
+// =============================================================================
+// 9) Data Window (debug)
+// =============================================================================
+plot(lastPivType, "Last Pivot Type", display=display.data_window)
+plot(tickSize,    "Tick Size",       display=display.data_window)
+plot(rowSize,     "Row Size",        display=display.data_window)
