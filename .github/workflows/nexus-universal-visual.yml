@@ -1,0 +1,30 @@
+name: Nexus visual unificado — 10 modelos com TP, painel e som
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/nexus_universal_visual/**'
+      - '03_projetos_proprios/**'
+      - '.github/workflows/nexus-universal-visual.yml'
+  pull_request:
+    paths:
+      - 'tools/nexus_universal_visual/**'
+      - '03_projetos_proprios/**'
+      - '.github/workflows/nexus-universal-visual.yml'
+jobs:
+  package-all-ten:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify visual signal contract
+        run: python -m unittest discover -s tools/nexus_universal_visual -p 'test_visual*.py' -v
+      - name: Package 10 unchanged original MQ5 sources and unified overlay
+        run: python tools/nexus_universal_visual/package.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nexus-10-Indicadores-Padrao-Visual-TP-Painel-Som
+          path: dist/Nexus_10_Indicadores_PadraoVisual_Instalacao.zip
+          if-no-files-found: error

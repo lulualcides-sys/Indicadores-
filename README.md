@@ -36,6 +36,10 @@ Licenças informadas pelos distribuidores: **MPL-2.0** (2 códigos) e **CC BY-NC
 
 Padrão obrigatório para novos indicadores Nexus: setas pequenas e não repetidas na mesma direção, resultado em **pontos reais do preço** (não `+1/+2/+3` TPs) e etiqueta discreta verde `+N pts` / vermelha `x -N pts` / neutra para sinal não resolvido. [Especificação detalhada](PADRAO_SINAIS_E_PONTOS.md). A nova fonte `v1.21` foi entregue diretamente ao usuário, mas ainda não foi incorporada ao GitHub.
 
+## Padrao visual universal para 10 indicadores
+
+Um único seletor carrega os dez códigos Nexus originais sem alterá-los, exibindo **setas menores, somente uma direção por vez, TP/SL, resultado em pontos, painel GREEN/RED/TOTAL e som**. [Ver o núcleo visual](tools/nexus_universal_visual/Nexus_Visual_Unificado_TP_Painel_Som.mq5), [instalação](tools/nexus_universal_visual/LEIA_PRIMEIRO.md) e [empacotamento automático com todos os 10 originais](.github/workflows/nexus-universal-visual.yml). As contagens são simulações brutas; compilar e validar no MT5 antes de usar.
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |
