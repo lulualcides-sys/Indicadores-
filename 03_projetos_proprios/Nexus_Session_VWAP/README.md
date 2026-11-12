@@ -1,4 +1,12 @@
-# Nexus Session VWAP Reclaim NR v1.00
+# Nexus Session VWAP Reclaim NR
+
+## Nova versão v1.10: uma seta por movimento
+
+[Baixar o código-fonte MT5 v1.10](v1.10/Nexus_Session_VWAP_NR_v1.10.mq5). A v1.00 foi preservada em `v1.00/`. Nesta versão, exige dois candles fechados além de 0,12 ATR do VWAP e espaçamento mínimo de 8 candles. Não repete seta do mesmo lado antes de reversão oposta confirmada. Plano ENTRY/SL/TP oculto por padrão.
+
+**Remova a v1.00 do gráfico ao instalar a v1.10**; as duas versões não se desativam automaticamente. Reduz a quantidade de setas, mas não comprova melhoria financeira. Ainda exige compilação MetaEditor e teste MT5 em ticks.
+
+## Versão anterior v1.00
 
 Novo indicador autoral MT5, separado do H1 Vector Factor, Liquidity Sweep e FVG Retest.
 
