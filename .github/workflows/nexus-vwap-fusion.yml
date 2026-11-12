@@ -1,0 +1,21 @@
+name: Nexus VWAP Fusion — testes de contrato e simulação
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/Nexus_VWAP_Fusion/**'
+      - '.github/workflows/nexus-vwap-fusion.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/Nexus_VWAP_Fusion/**'
+      - '.github/workflows/nexus-vwap-fusion.yml'
+  workflow_dispatch:
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Testes de regressao sinteticos
+        run: python -m unittest discover -s 03_projetos_proprios/Nexus_VWAP_Fusion/tests -p 'test_*.py' -v
