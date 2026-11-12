@@ -1,0 +1,19 @@
+name: VWAP v1.10 - validar controle de setas
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/Nexus_Session_VWAP/**'
+      - '.github/workflows/vwap-v110-anti-spam.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/Nexus_Session_VWAP/**'
+      - '.github/workflows/vwap-v110-anti-spam.yml'
+jobs:
+  anti-spam:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m unittest discover -s 03_projetos_proprios/Nexus_Session_VWAP/tests -p 'test_direction_v110.py' -v
