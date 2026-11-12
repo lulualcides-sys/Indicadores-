@@ -1,0 +1,38 @@
+name: Forex H1 Vector MTF — verificacao estatica
+on:
+  push:
+    paths:
+      - '03_projetos_proprios/H1_Vector_Factor/**'
+      - '.github/workflows/h1-vector-forex-mtf.yml'
+  pull_request:
+    paths:
+      - '03_projetos_proprios/H1_Vector_Factor/**'
+      - '.github/workflows/h1-vector-forex-mtf.yml'
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Sintaxe basica, metas de TP e integridade dos sinais
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('03_projetos_proprios/H1_Vector_Factor/v1.50/H1_Vector_Forex_MTF_v1.50_TP123_Painel_Som.mq5')
+          s=p.read_text(encoding='utf8')
+          assert s.count('{')==s.count('}')
+          for txt in ('CopyRates(_Symbol,PERIOD_M1,from,until,bars)',
+                      'InpTP1R                 = 1.00',
+                      'InpTP2R                 = 1.50',
+                      'InpTP3R                 = 2.00',
+                      'PERIOD_M5','PERIOD_M15','PERIOD_M30','PERIOD_H1',
+                      'PlaySound(InpSoundFile)','LastClosedLevels',
+                      'signals[nextSignal].ready<=tOpen'):
+              assert txt in s,txt
+          assert 'OrderSend(' not in s
+          print('PASS static H1 Vector MTF source contract')
+          PY
+          python -m unittest discover -s 03_projetos_proprios/H1_Vector_Factor/testes -p 'test_*.py' -v

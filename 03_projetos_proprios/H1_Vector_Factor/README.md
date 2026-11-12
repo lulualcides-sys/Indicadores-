@@ -1,26 +1,28 @@
-# H1 Vector Factor — indicador MT5 independente
+# H1 Vector Forex — foco principal
 
-- **Versão atual:** [v1.20 sem repaint — código MQ5](v1.20/H1_Vector_Factor_M1.mq5).
-- **Versão anterior preservada:** [v1.10 — código MQ5](v1.10/H1_Vector_Factor_M1.mq5).
-- **Plataforma:** MetaTrader 5, gráfico **M1**. M5/M15 ainda não implementados neste indicador.
-- **Tipo:** indicador, **não envia ordens**. O sinal é confirmado ao término do candle.
-- **Origem:** implementação própria inspirada em elementos visuais públicos, sem equivalência comprovada ao indicador Bull H1M1.
+**Versão atual:** [H1 Vector Forex MTF v1.50](v1.50/H1_Vector_Forex_MTF_v1.50_TP123_Painel_Som.mq5) (código fonte MT5; ainda não compilado no MetaEditor neste ambiente).
 
-## Componentes
-1. Canal inicial de cada hora a partir dos **3 primeiros candles M1 fechados**, em horário do servidor do broker.
-2. Confirmação de rompimento + pullback opcional; descarta entradas excessivamente afastadas e candidates vencidos.
-3. Pontuação vetorial de **quatro fatores**: intensidade do rompimento (30%), corpo do candle (25%), momentum (30%), tamanho do canal relativo ao ATR (15%). Os pesos são hipótese original **não otimizada**.
-4. Duas setas confirmadas BUY/SELL, avisos de espera/cancelamento; TP1 = 1R, TP2 = 1,5R, TP3 = 2R e SL; alertas opcionais.
-5. Sem repintura intencional: não usa a vela corrente para sinal; mantém setas confirmadas no processamento incremental, com exceção de revisões de histórico.
+Oito indicadores Nexus rejeitados foram removidos da seleção ativa; todos foram preservados no [backup anterior à limpeza](https://github.com/lulualcides-sys/Indicadores-/tree/backup/indicadores-descartados-pre-forex-20261112). Esta alteração não mexe nos códigos originais de terceiros.
 
-## Instalação e teste
-1. MetaTrader 5 → Arquivo → Abrir pasta de dados → `MQL5/Indicators`.
-2. Copiar [arquivo da versão 1.20](v1.20/H1_Vector_Factor_M1.mq5).
-3. Abrir MetaEditor, compilar com F7 e confirmar erros/avisos.
-4. Anexar no gráfico XAUUSD **M1** de conta **demo**; acompanhar viradas de hora e sinais.
-5. Observar e registrar repaint e eventos de recarga; seguir [critério obrigatório](../../00_politicas/SEM_REPAINT.md).
+## Timeframes disponíveis
 
-## Evidência até esta migração
-A suíte Python local do pacote v1.20 foi executada em 11/11/2026: **15 testes passaram (0 falhas)**, incluindo invariância de sinais diante de dados futuros e checagens estáticas. **Não houve compilação MetaEditor nem backtest com dados reais nesta sessão**. A aprovação financeira permanece pendente.
+**M1, M5, M15, M30 e H1.** A lógica original continua ancorada nos três primeiros candles **M1 completos** de cada hora. Um sinal detectado em M1 só pode ser usado depois de confirmado e é executado virtualmente na abertura seguinte do timeframe exibido. **H1/M30 entram mais tarde**, podendo alterar bastante a qualidade dos resultados ou invalidar o stop; não são equivalentes a sinais de M1.
 
-Não usar a imagem sintética anterior de prévia como prova de execução real.
+## Padrão visual restaurado
+
+- **TP1 = 1R; TP2 = 1,5R; TP3 = 2R**, três níveis visíveis mais Entrada e SL; a última operação encerrada também deixa os níveis visíveis.
+- Setas pequenas, somente uma direção por vez, espaço mínimo de 8 candles entre sinais.
+- Resultado em **pontos de cotação do broker** e painel GREEN/RED/TOTAL, com três saídas virtuais iguais (1/3 em cada TP).
+- Entrada BUY considera spread aproximado e saída SELL considera spread aproximado. Em candle que toca TP e stop, considera **stop primeiro**.
+- Som uma vez por nova abertura real de vela (`alert.wav`); **PlaySound não funciona no Strategy Tester**.
+- Nenhuma ordem enviada. Não é garantia de não repintura, lucro ou backtest financeiro.
+
+## Instalação
+
+Copiar `v1.50/H1_Vector_Forex_MTF_v1.50_TP123_Painel_Som.mq5` em `MQL5/Indicators`, abrir no MetaEditor e compilar com **F7**. Remover a v1.40 do gráfico antes de anexar a nova. Para períodos M5/H1, carregar previamente histórico **M1** do par. Se faltar M1, o indicador não cria sinais usando dados inventados.
+
+## Validação
+
+18 testes **sintéticos e estáticos** passaram localmente, cobrindo horários de confirmação, cinco períodos, resultados fracionados, gap, TP/SL no mesmo candle e espelhamento de compra/venda. **Ainda falta compilar e executar no MT5**.
+
+Histórico preservado: [v1.30](v1.30/H1_Vector_Factor_M1.mq5), [v1.20](v1.20/H1_Vector_Factor_M1.mq5), [v1.10](v1.10/H1_Vector_Factor_M1.mq5).
