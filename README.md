@@ -32,6 +32,10 @@ A pesquisa de [@ShepherdFxTradingTools](https://t.me/s/ShepherdFxTradingTools) l
 
 Licenças informadas pelos distribuidores: **MPL-2.0** (2 códigos) e **CC BY-NC-SA 4.0** (2 códigos, uso não comercial). Autoria e cabeçalhos originais preservados. Compilação MetaEditor e testes financeiros pendentes.
 
+## Padrão visual e resultados em pontos
+
+Padrão obrigatório para novos indicadores Nexus: setas pequenas e não repetidas na mesma direção, resultado em **pontos reais do preço** (não `+1/+2/+3` TPs) e etiqueta discreta verde `+N pts` / vermelha `x -N pts` / neutra para sinal não resolvido. [Especificação detalhada](PADRAO_SINAIS_E_PONTOS.md). A nova fonte `v1.21` foi entregue diretamente ao usuário, mas ainda não foi incorporada ao GitHub.
+
 ## Acesso rápido
 
 | Pasta | Conteúdo |
