@@ -45,4 +45,4 @@ O uso universal é viável porque os dez indicadores guardam seus sinais BUY e S
 
 ## Estado técnico
 
-12 testes Python de estrutura e simulação básica aprovados neste ambiente. **Não compilado no MetaEditor e não testado em MT5**, portanto compatibilidade real e estatísticas financeiras ainda não certificadas. A biblioteca de dez fontes é externa a este ZIP; este arquivo contém o núcleo visual e testes, não os dez indicadores de base. A entrega completa dos fontes pode ser empacotada a partir do repositório GitHub original.
+12 testes Python de estrutura e simulação básica aprovados neste ambiente. **Não compilado no MetaEditor e não testado em MT5**, portanto compatibilidade real e estatísticas financeiras ainda não certificadas. O pacote **completo gerado pelo GitHub Actions** inclui esta camada visual, os dez arquivos originais `.mq5`, instruções e manifesto SHA-256. Compile os dez originais na subpasta `NexusBase` antes de compilar a camada visual. Um ZIP parcial fornecido anteriormente continha apenas a camada visual e os testes; prefira agora o pacote completo.
